@@ -11,15 +11,12 @@ requires = [
 ]
 
 setup(
-    name='pystock',
+    name='pyStock',
     version='0.0.1',
     description='A stock market model for persistence using SQLAlchemy',
     long_description=README + '\n\n' + CHANGES,
     classifiers=[
         "Programming Language :: Python",
-        "Framework :: Pyramid",
-        "Topic :: Stock Market :: Model",
-        "Intended Audience :: Financial and Insurance Industry",
         "Topic :: Office/Business :: Financial"
     ],
     author='Leonardo Lazzaro',
@@ -31,5 +28,5 @@ setup(
     zip_safe=False,
     install_requires=requires,
     tests_require=requires,
-    test_suite="pystock",
+    test_suite="pyStock",
 )

@@ -2,6 +2,7 @@ import datetime
 
 from pyStock import Base
 
+from sqlalchemy.sql.expression import ClauseElement
 from sqlalchemy.orm import relationship
 from sqlalchemy import (
     Column,
@@ -14,6 +15,18 @@ from sqlalchemy import (
 )
 
 
+def get_or_create(session, model, defaults=None, **kwargs):
+    instance = session.query(model).filter_by(**kwargs).first()
+    if instance:
+        return instance, False
+    else:
+        params = dict((k, v) for k, v in kwargs.iteritems() if not isinstance(v, ClauseElement))
+        params.update(defaults or {})
+        instance = model(**params)
+        session.add(instance)
+        return instance, True
+
+
 class Broker(Base):
     """
         An agency broker is a broker that acts as a middle man to the stock exchange, and places trades on behalf of clients.
@@ -21,7 +34,7 @@ class Broker(Base):
     __tablename__ = 'pystock_broker'
 
     id = Column(Integer, primary_key=True)
-    name = Column(String)
+    name = Column(String, unique=True)
 
     def commission(self, asset):
         pass
@@ -34,6 +47,8 @@ class Account(Base):
     __tablename__ = 'pystock_account'
 
     id = Column(Integer, primary_key=True)
+    broker_id = Column(Integer, ForeignKey('pystock_broker.id'))
+    broker = relationship("Broker", backref="accounts")
 
 
 class Asset(Base):
@@ -46,8 +61,8 @@ class Asset(Base):
     symbol = Column(String, nullable=False, unique=True)
 
 
-class StockAsset(Asset):
-    __tablename__ = 'pystock_stockasset'
+#class StockAsset(Asset):
+#    __tablename__ = 'pystock_stockasset'
 
 
 class Tick(Base):
@@ -100,3 +115,10 @@ class Order(Base):
     id = Column(Integer, primary_key=True)
     account_id = Column(Integer, ForeignKey('pystock_account.id'))
     account = relationship("Account", backref="orders")
+    asset_id = Column(Integer, ForeignKey('pystock_asset.id'))
+    asset = relationship("Asset", backref="order")
+    order_id = Column(String, unique=True)
+    price = Column(DECIMAL)
+    share = Column(Integer)
+    executed_on = Column(DateTime, onupdate=datetime.datetime.now)
+    filled_on = Column(DateTime, onupdate=datetime.datetime.now)

@@ -54,11 +54,15 @@ class Account(Base):
 class Asset(Base):
     """
         An asset that derives value because of a contractual claim. Stocks, bonds, bank deposits, and the like are all examples of financial assets.
+
+        ISIN:  International Securities Identification Number (ISIN) uniquely identifies a security. Its structure is defined in ISO 6166.
+
     """
     __tablename__ = 'pystock_asset'
 
     id = Column(Integer, primary_key=True)
     symbol = Column(String, nullable=False, unique=True)
+    ISIN = Column(String(12), nullable=False, unique=True)
 
 
 #class StockAsset(Asset):

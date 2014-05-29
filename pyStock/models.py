@@ -62,10 +62,13 @@ class Asset(Base):
 
     id = Column(Integer, primary_key=True)
     symbol = Column(String, nullable=False, unique=True)
+    description = Column(String, nullable=False)
+    issuer_name = Column(String, nullable=True)
     ISIN = Column(String(12), nullable=False, unique=True)
+    CFI = Column(String(6), nullable=True, unique=True)
 
 
-#class StockAsset(Asset):
+# class StockAsset(Asset):
 #    __tablename__ = 'pystock_stockasset'
 
 

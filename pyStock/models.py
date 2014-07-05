@@ -11,7 +11,8 @@ from sqlalchemy import (
     ForeignKey,
     DateTime,
     DECIMAL,
-    Date
+    Date,
+    Boolean
 )
 
 
@@ -34,7 +35,8 @@ class Broker(Base):
     __tablename__ = 'pystock_broker'
 
     id = Column(Integer, primary_key=True)
-    name = Column(String, unique=True)
+    name = Column(String)
+    identification_code = Column(String, unique=True)
 
     def commission(self, asset):
         pass
@@ -74,14 +76,35 @@ class Asset(Base):
 
 class Tick(Base):
     """
-        The minimum upward or downward movement in the price of a security. The term "tick" also refers to the change in the price of a security from trade to trade. Since 2001, with the advent of decimalization, the minimum tick size for stocks trading above $1 is 1 cent.
+        The minimum upward or downward movement in the price of a security.
+        The term "tick" also refers to the change in the price of a security from trade to trade.
+        Since 2001, with the advent of decimalization, the minimum tick size for stocks trading above $1 is 1 cent.
     """
     __tablename__ = 'pystock_tick'
 
     id = Column(Integer, primary_key=True)
 
+    created_on = Column(DateTime, onupdate=datetime.datetime.now)
+    broker_buyer_id = Column(Integer, ForeignKey('pystock_broker.id'))
+    broker_buyer = relationship("Broker", backref="buyer_ticks", foreign_keys=[broker_buyer_id])
+    broker_seller_id = Column(Integer, ForeignKey('pystock_broker.id'))
+    broker_seller = relationship("Broker", backref="seller_ticks", foreign_keys=[broker_seller_id])
+    price = Column(DECIMAL)
+    amount = Column(DECIMAL)
+    volume = Column(Integer)
+    nominal_amount = Column(Integer)
+    tick_date = Column(DateTime)
+    asset_id = Column(Integer, ForeignKey('pystock_asset.id'))
+    asset = relationship("Asset", backref="ticks")
+    fraction = Column(Boolean)
+    expiration = Column(String)
+    register_number = Column(String)
+
 
 class Quote(Base):
+    """
+        This denotes the prevailing buy and sell prices for a particular financial instrument. Quotes are displayed as: sell price – buy price. For example, if 125.7 – 125.9 is the quote: 125.7 is the sell price and 125.9 is the buy price.
+    """
     __tablename__ = 'pystock_quote'
     id = Column(Integer, primary_key=True)
     created_on = Column(DateTime, onupdate=datetime.datetime.now)

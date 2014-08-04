@@ -15,8 +15,9 @@ import sqlalchemy as sa
 
 
 def upgrade():
-    op.execute("ALTER TABLE pystock_tick ADD CONSTRAINT register_number_key UNIQUE (register_number);")
+    op.execute("ALTER TABLE pystock_tick ADD CONSTRAINT asset_register_number_key UNIQUE (asset_id, register_number);")
 
 
 def downgrade():
-    pass
+    op.execute("ALTER TABLE pystock_tick DROP CONSTRAINT asset_register_number_key;")
+

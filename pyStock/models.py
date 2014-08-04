@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import datetime
 
 from pyStock import Base
@@ -36,6 +37,8 @@ class Broker(Base):
 
     id = Column(Integer, primary_key=True)
     name = Column(String)
+    address = Column(String)
+    phone = Column(String)
     identification_code = Column(String, unique=True)
 
     def commission(self, asset):
@@ -98,12 +101,14 @@ class Tick(Base):
     asset = relationship("Asset", backref="ticks")
     fraction = Column(Boolean)
     expiration = Column(String)
-    register_number = Column(String)
+    register_number = Column(String, unique=True)
 
 
 class Quote(Base):
     """
-        This denotes the prevailing buy and sell prices for a particular financial instrument. Quotes are displayed as: sell price – buy price. For example, if 125.7 – 125.9 is the quote: 125.7 is the sell price and 125.9 is the buy price.
+        This denotes the prevailing buy and sell prices for a particular financial instrument.
+        Quotes are displayed as: sell price – buy price.
+        For example, if 125.7 – 125.9 is the quote: 125.7 is the sell price and 125.9 is the buy price.
     """
     __tablename__ = 'pystock_quote'
     id = Column(Integer, primary_key=True)

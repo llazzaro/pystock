@@ -8,6 +8,8 @@ CHANGES = open(os.path.join(here, 'CHANGES.txt')).read()
 
 requires = [
     'sqlalchemy',
+    'alembic',
+    'psycopg2'
 ]
 
 setup(

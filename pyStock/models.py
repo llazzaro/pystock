@@ -157,3 +157,46 @@ class Order(Base):
     share = Column(Integer)
     executed_on = Column(DateTime, onupdate=datetime.datetime.now)
     filled_on = Column(DateTime, onupdate=datetime.datetime.now)
+
+
+class Currency(Base):
+    """
+        A generally accepted form of money, including coins and paper notes,
+        which is issued by a government and circulated within an economy.
+        Used as a medium of exchange for goods and services, currency is the basis for trade.
+
+        code uses ISO 4217 Currency Code
+    """
+    __tablename__ = 'pystock_currency'
+    id = Column(Integer, primary_key=True)
+    code = Column(String)
+
+
+class MonetarySource(Base):
+    __tablename__ = 'pystock_monetary_source'
+    id = Column(Integer, primary_key=True)
+    name = Column(String)
+
+
+class FXRates(Base):
+    """
+        The price of a nation’s currency in terms of another currency.
+        An exchange rate thus has two components, the domestic currency
+        and a foreign currency, and can be quoted either directly or
+        indirectly. In a direct quotation, the price of a unit of foreign
+        currency is expressed in terms of the domestic currency.
+        In an indirect quotation, the price of a unit of domestic currency
+        is expressed in terms of the foreign currency. An exchange rate
+        that does not have the domestic currency as one of the two
+        currency components is known as a cross currency, or cross rate.
+    """
+    __tablename__ = 'pystock_fxrates'
+    id = Column(Integer, primary_key=True)
+    monetary_source = relationship("MonetarySource", backref="fxrates")
+    monetary_source_id = Column(Integer, ForeignKey('pystock_monetary_source.id'))
+    from_currency_id = Column(Integer, ForeignKey('pystock_currency.id'))
+    from_currency = relationship("Currency", backref="fxrates")
+    to_curreny_id = Column(Integer, ForeignKey('pystock_currency.id'))
+    to_currency = relationship("Currency", backref="fxrates")
+    buy_rate = Column(DECIMAL)
+    sell_rate = Column(DECIMAL)

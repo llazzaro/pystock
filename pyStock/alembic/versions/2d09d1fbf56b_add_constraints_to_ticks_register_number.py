@@ -11,13 +11,20 @@ revision = '2d09d1fbf56b'
 down_revision = '7d0cfaec4a0'
 
 from alembic import op
-import sqlalchemy as sa
 
 
 def upgrade():
-    op.execute("ALTER TABLE pystock_tick ADD CONSTRAINT asset_register_number_key UNIQUE (asset_id, register_number);")
+    op.execute("""
+            DELETE
+            FROM pystock_tick
+            WHERE id NOT IN (
+               SELECT MIN(id) as id
+               FROM pystock_tick
+               GROUP BY asset_id, tick_date, register_number
+            )
+    """)
+    op.execute("ALTER TABLE pystock_tick ADD CONSTRAINT asset_register_number_key UNIQUE (asset_id, tick_date, register_number);")
 
 
 def downgrade():
     op.execute("ALTER TABLE pystock_tick DROP CONSTRAINT asset_register_number_key;")
-

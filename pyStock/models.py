@@ -159,6 +159,41 @@ class Order(Base):
     filled_on = Column(DateTime, onupdate=datetime.datetime.now)
 
 
+class Split(Base):
+    """
+        A corporate action in which a company divides its existing shares into multiple shares.
+        Although the number of shares outstanding increases by a specific multiple, the total
+        dollar value of the shares remains the same compared to pre-split amounts, because the
+        split did not add any real value.
+    """
+    __tablename__ = 'pystock_split'
+    id = Column(Integer, primary_key=True)
+    announce_date = Column(DateTime)
+    split_date = Column(DateTime)
+    ratio = Column(Integer)
+    asset_id = Column(Integer, ForeignKey('pystock_asset.id'))
+    asset = relationship("Asset", backref="split")
+
+
+class Dividend(Base):
+    """
+        A distribution of a portion of a company's earnings, decided by the board of directors,
+        to a class of its shareholders. The dividend is most often quoted in terms of the dollar
+        amount each share receives (dividends per share). It can also be quoted in terms of a
+        percent of the current market price, referred to as dividend yield.
+    """
+
+    __tablename__ = 'pystock_dividend'
+    id = Column(Integer, primary_key=True)
+    announce_date = Column(DateTime)
+    exdividend_date = Column(DateTime)
+    record_date = Column(DateTime)
+    payment_date = Column(DateTime)
+    amount = Column(DECIMAL)
+    asset_id = Column(Integer, ForeignKey('pystock_asset.id'))
+    asset = relationship("Asset", backref="dividends")
+
+
 class Currency(Base):
     """
         A generally accepted form of money, including coins and paper notes,
@@ -169,7 +204,8 @@ class Currency(Base):
     """
     __tablename__ = 'pystock_currency'
     id = Column(Integer, primary_key=True)
-    code = Column(String)
+    code = Column(String, unique=True)
+    name = Column(String)
 
 
 class MonetarySource(Base):
@@ -195,8 +231,8 @@ class FXRates(Base):
     monetary_source = relationship("MonetarySource", backref="fxrates")
     monetary_source_id = Column(Integer, ForeignKey('pystock_monetary_source.id'))
     from_currency_id = Column(Integer, ForeignKey('pystock_currency.id'))
-    from_currency = relationship("Currency", backref="fxrates")
+    from_currency = relationship("Currency", backref="from_fxrates", foreign_keys=[from_currency_id])
     to_curreny_id = Column(Integer, ForeignKey('pystock_currency.id'))
-    to_currency = relationship("Currency", backref="fxrates")
+    to_currency = relationship("Currency", backref="to_fxrates", foreign_keys=[to_curreny_id])
     buy_rate = Column(DECIMAL)
     sell_rate = Column(DECIMAL)

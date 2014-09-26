@@ -23,7 +23,8 @@ def upgrade():
                GROUP BY asset_id, tick_date, register_number
             )
     """)
-    op.execute("ALTER TABLE pystock_tick ADD CONSTRAINT asset_register_number_key UNIQUE (asset_id, tick_date, register_number);")
+    op.create_index('asset_register_number_key', 'pystock_tick', ['asset_id', 'tick_date', 'register_number'], unique=True)
+    op.create_unique_constraint(u'asset_register_number_key', 'pystock_tick', ['asset_id', 'tick_date', 'register_number'])
 
 
 def downgrade():

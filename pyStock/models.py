@@ -4,6 +4,7 @@ import datetime
 from pyStock import Base
 
 from sqlalchemy.sql.expression import ClauseElement
+from sqlalchemy import UniqueConstraint
 from sqlalchemy.orm import relationship
 from sqlalchemy import (
     Column,

@@ -61,10 +61,23 @@ class Asset(Base):
     """
         An asset that derives value because of a contractual claim. Stocks, bonds, bank deposits, and the like are all examples of financial assets.
 
-        ISIN:  International Securities Identification Number (ISIN) uniquely identifies a security. Its structure is defined in ISO 6166.
 
     """
     __tablename__ = 'pystock_asset'
+
+    id = Column(Integer, primary_key=True)
+
+
+class Security(Base):
+    """
+
+        ISIN:  International Securities Identification Number (ISIN) uniquely identifies a security. Its structure is defined in ISO 6166.
+    """
+    __tablename__ = 'pystock_security'
+    __mapper_args__ = {
+        'polymorphic_identity': 'security',
+        'polymorphic_on': type
+    }
 
     id = Column(Integer, primary_key=True)
     symbol = Column(String, nullable=False, unique=True)
@@ -74,8 +87,33 @@ class Asset(Base):
     CFI = Column(String(6), nullable=True, unique=True)
 
 
-# class StockAsset(Asset):
-#    __tablename__ = 'pystock_stockasset'
+class Stock(Base):
+    """
+        A stock or any other security representing an ownership interest.
+        An equity investment generally refers to the buying and holding of
+        shares of stock on a stock market by individuals and firms in
+        anticipation of income from dividends and capital gains, as the value of the stock rises.
+
+    """
+    __tablename__ = 'pystock_stock'
+
+    id = Column(Integer, primary_key=True)
+    company = relationship("Company", backref="ticks")
+    company_id = Column(Integer, ForeignKey('pystock_company.id'))
+
+    __mapper_args__ = {
+        'polymorphic_identity': 'pystock_stock',
+    }
+
+
+class Bond(Base):
+    __tablename__ = 'pystock_bond'
+
+    id = Column(Integer, primary_key=True)
+
+    __mapper_args__ = {
+        'polymorphic_identity': 'pystock_bond',
+    }
 
 
 class Tick(Base):
@@ -98,8 +136,8 @@ class Tick(Base):
     volume = Column(Integer)
     nominal_amount = Column(Integer)
     tick_date = Column(DateTime)
-    asset_id = Column(Integer, ForeignKey('pystock_asset.id'))
-    asset = relationship("Asset", backref="ticks")
+    security_id = Column(Integer, ForeignKey('pystock_security.id'))
+    security = relationship("Security", backref="ticks")
     fraction = Column(Boolean)
     expiration = Column(String)
     register_number = Column(String, unique=True)

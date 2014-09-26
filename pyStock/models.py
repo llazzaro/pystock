@@ -268,6 +268,10 @@ class FXRates(Base):
         currency components is known as a cross currency, or cross rate.
     """
     __tablename__ = 'pystock_fxrates'
+    __table_args__ = (
+            UniqueConstraint('date', 'monetary_source_id', name='unique_monetary_date')
+    )
+
     id = Column(Integer, primary_key=True)
     monetary_source = relationship("MonetarySource", backref="fxrates")
     monetary_source_id = Column(Integer, ForeignKey('pystock_monetary_source.id'))

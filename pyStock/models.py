@@ -85,6 +85,8 @@ class Security(Base):
     issuer_name = Column(String, nullable=True)
     ISIN = Column(String(12), nullable=False, unique=True)
     CFI = Column(String(6), nullable=True, unique=True)
+    exchange = relationship("Exchange", backref="ticks")
+    exchange_id = Column(Integer, ForeignKey('pystock_exchange.id'))
 
 
 class Stock(Base):
@@ -275,3 +277,78 @@ class FXRates(Base):
     to_currency = relationship("Currency", backref="to_fxrates", foreign_keys=[to_curreny_id])
     buy_rate = Column(DECIMAL)
     sell_rate = Column(DECIMAL)
+    created_on = Column(DateTime, onupdate=datetime.datetime.now)
+    date = Column(DateTime)
+
+
+class Company(Base):
+    __tablename__ = 'pystock_company'
+    id = Column(Integer, primary_key=True)
+
+    name = Column(String)
+
+
+class Book(Base):
+    """
+         record of all the positions that a trader is holding.
+         This record shows the total amount of long and short position
+         that the trader has undertaken.
+    """
+    __tablename__ = 'pystock_book'
+    id = Column(Integer, primary_key=True)
+
+    name = Column(String)
+    user = relationship("User", backref="trades")
+    user_id = Column(Integer, ForeignKey('pystock_user.id'))
+
+
+class User(Base):
+    """
+        Represent how is buying. usually this class is associated with another user model in your app
+    """
+    __tablename__ = 'pystock_user'
+    id = Column(Integer, primary_key=True)
+    name = Column(String)
+
+
+class Trade(Base):
+    __tablename__ = 'pystock_trade'
+    id = Column(Integer, primary_key=True)
+    created_on = Column(DateTime, onupdate=datetime.datetime.now)
+    trade_date = Column(DateTime)
+    price = Column(DECIMAL)
+    amount = Column(DECIMAL)
+    user = relationship("User", backref="trades")
+    user_id = Column(Integer, ForeignKey('pystock_user.id'))
+    broker = relationship("Broker", backref="trades")
+    broker_id = Column(Integer, ForeignKey('pystock_broker.id'))
+    security = relationship("Security", backref="trades")
+    security_id = Column(Integer, ForeignKey('pystock_broker.id'))
+    operation_code = Column(String)
+    trade_type = Column(String)  # Buy or Sell
+
+
+class Exchange(Base):
+    """
+        A marketplace in which securities, commodities, derivatives and other financial instruments are traded.
+        The core function of an exchange - such as a stock exchange - is to ensure fair and orderly trading,
+        as well as efficient dissemination of price information for any securities trading on that exchange.
+        Exchanges give companies, governments and other groups a platform to sell securities to the investing public.
+    """
+    __tablename__ = 'pystock_exchange'
+    id = Column(Integer, primary_key=True)
+
+    code = Column(String)
+    name = Column(String)
+#    country =
+
+
+class Liability(Base):
+    """
+        Recorded on the balance sheet (right side), liabilities include loans,
+        accounts payable, mortgages, deferred revenues and accrued expenses.
+    """
+    __tablename__ = 'pystock_liability'
+    id = Column(Integer, primary_key=True)
+
+

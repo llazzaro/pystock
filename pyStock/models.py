@@ -356,3 +356,18 @@ class Liability(Base):
     id = Column(Integer, primary_key=True)
 
 
+class NewsSource(Base):
+
+    __tablename__ = 'pystock_news_source'
+    id = Column(Integer, primary_key=True)
+    name = Column(String, unique=True)
+
+
+class News(Base):
+
+    __tablename__ = 'pystock_news'
+    id = Column(Integer, primary_key=True)
+    date = Column(DateTime)
+    news_source = relationship("NewsSource", backref="news")
+    news_source_id = Column(Integer, ForeignKey('pystock_news_source.id'))
+    information = Column(String)

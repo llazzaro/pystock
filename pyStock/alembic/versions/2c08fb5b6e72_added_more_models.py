@@ -32,22 +32,6 @@ def upgrade():
         sa.PrimaryKeyConstraint('id')
     )
 
-    op.create_table('pystock_trade',
-        sa.Column('id', sa.Integer(), nullable=False),
-        sa.Column('created_on', sa.DateTime(), nullable=False),
-        sa.Column('trade_date', sa.DateTime(), nullable=False),
-        sa.Column('user_id', sa.Integer(), nullable=True),
-        sa.Column('broker_id', sa.Integer(), nullable=True),
-        sa.Column('amount', sa.DECIMAL(), nullable=True),
-        sa.Column('price', sa.DECIMAL(), nullable=True),
-        sa.Column('operation_code', sa.String(), nullable=False),
-        sa.Column('trade_type', sa.String(), nullable=False),
-
-        sa.ForeignKeyConstraint(['user_id'], ['pystock_user.id'], ),
-        sa.ForeignKeyConstraint(['broker_id'], ['pystock_broker.id'], ),
-        sa.PrimaryKeyConstraint('id')
-
-    )
 
     op.create_table('pystock_exchange',
         sa.Column('id', sa.Integer(), nullable=False),
@@ -80,7 +64,6 @@ def downgrade():
     op.drop_column(u'pystock_fxrates', sa.Column('created_on', sa.DateTime(), nullable=True))
     op.drop_table('pystock_book')
     op.drop_table('pystock_user')
-    op.drop_table('pystock_trade')
     op.drop_table('pystock_exchange')
     op.drop_table('pystock_liability')
     op.drop_table('pystock_company')

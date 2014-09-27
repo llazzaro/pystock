@@ -85,7 +85,7 @@ class Security(Base):
     issuer_name = Column(String, nullable=True)
     ISIN = Column(String(12), nullable=False, unique=True)
     CFI = Column(String(6), nullable=True, unique=True)
-    exchange = relationship("Exchange", backref="ticks")
+    exchange = relationship("Exchange", backref="secutiries")
     exchange_id = Column(Integer, ForeignKey('pystock_exchange.id'))
 
 
@@ -100,7 +100,7 @@ class Stock(Base):
     __tablename__ = 'pystock_stock'
 
     id = Column(Integer, primary_key=True)
-    company = relationship("Company", backref="ticks")
+    company = relationship("Company", backref="stock")
     company_id = Column(Integer, ForeignKey('pystock_company.id'))
 
     __mapper_args__ = {
@@ -118,28 +118,25 @@ class Bond(Base):
     }
 
 
-class Tick(Base):
+class Trade(Base):
     """
-        The minimum upward or downward movement in the price of a security.
-        The term "tick" also refers to the change in the price of a security from trade to trade.
-        Since 2001, with the advent of decimalization, the minimum tick size for stocks trading above $1 is 1 cent.
     """
-    __tablename__ = 'pystock_tick'
+    __tablename__ = 'pystock_trade'
 
     id = Column(Integer, primary_key=True)
 
     created_on = Column(DateTime, onupdate=datetime.datetime.now)
     broker_buyer_id = Column(Integer, ForeignKey('pystock_broker.id'))
-    broker_buyer = relationship("Broker", backref="buyer_ticks", foreign_keys=[broker_buyer_id])
+    broker_buyer = relationship("Broker", backref="buyer_trades", foreign_keys=[broker_buyer_id])
     broker_seller_id = Column(Integer, ForeignKey('pystock_broker.id'))
-    broker_seller = relationship("Broker", backref="seller_ticks", foreign_keys=[broker_seller_id])
+    broker_seller = relationship("Broker", backref="seller_trades", foreign_keys=[broker_seller_id])
     price = Column(DECIMAL)
     amount = Column(DECIMAL)
     volume = Column(Integer)
     nominal_amount = Column(Integer)
-    tick_date = Column(DateTime)
+    trade_date = Column(DateTime)
     security_id = Column(Integer, ForeignKey('pystock_security.id'))
-    security = relationship("Security", backref="ticks")
+    security = relationship("Security", backref="trades")
     fraction = Column(Boolean)
     expiration = Column(String)
     register_number = Column(String, unique=True)
@@ -315,21 +312,21 @@ class User(Base):
     name = Column(String)
 
 
-class Trade(Base):
-    __tablename__ = 'pystock_trade'
-    id = Column(Integer, primary_key=True)
-    created_on = Column(DateTime, onupdate=datetime.datetime.now)
-    trade_date = Column(DateTime)
-    price = Column(DECIMAL)
-    amount = Column(DECIMAL)
-    user = relationship("User", backref="trades")
-    user_id = Column(Integer, ForeignKey('pystock_user.id'))
-    broker = relationship("Broker", backref="trades")
-    broker_id = Column(Integer, ForeignKey('pystock_broker.id'))
-    security = relationship("Security", backref="trades")
-    security_id = Column(Integer, ForeignKey('pystock_broker.id'))
-    operation_code = Column(String)
-    trade_type = Column(String)  # Buy or Sell
+# class Trade(Base):
+#    __tablename__ = 'pystock_trade'
+#    id = Column(Integer, primary_key=True)
+#    created_on = Column(DateTime, onupdate=datetime.datetime.now)
+#    trade_date = Column(DateTime)
+#    price = Column(DECIMAL)
+#    amount = Column(DECIMAL)
+#    user = relationship("User", backref="trades")
+#    user_id = Column(Integer, ForeignKey('pystock_user.id'))
+#    broker = relationship("Broker", backref="trades")
+#    broker_id = Column(Integer, ForeignKey('pystock_broker.id'))
+#    security = relationship("Security", backref="trades")
+#    security_id = Column(Integer, ForeignKey('pystock_broker.id'))
+#    operation_code = Column(String)
+#    trade_type = Column(String)  # Buy or Sell
 
 
 class Exchange(Base):
@@ -371,3 +368,11 @@ class News(Base):
     news_source = relationship("NewsSource", backref="news")
     news_source_id = Column(Integer, ForeignKey('pystock_news_source.id'))
     information = Column(String)
+
+
+# class Tick
+
+#        The minimum upward or downward movement in the price of a security.
+#        The term "tick" also refers to the change in the price of a security from trade to trade.
+#        Since 2001, with the advent of decimalization, the minimum tick size for stocks trading above $1 is 1 cent.
+

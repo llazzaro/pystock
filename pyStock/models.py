@@ -74,12 +74,9 @@ class Security(Base):
         ISIN:  International Securities Identification Number (ISIN) uniquely identifies a security. Its structure is defined in ISO 6166.
     """
     __tablename__ = 'pystock_security'
-    __mapper_args__ = {
-        'polymorphic_identity': 'security',
-        'polymorphic_on': type
-    }
 
     id = Column(Integer, primary_key=True)
+    security_type = Column(String(50))
     symbol = Column(String, nullable=False, unique=True)
     description = Column(String, nullable=False)
     issuer_name = Column(String, nullable=True)
@@ -87,6 +84,11 @@ class Security(Base):
     CFI = Column(String(6), nullable=True, unique=True)
     exchange = relationship("Exchange", backref="secutiries")
     exchange_id = Column(Integer, ForeignKey('pystock_exchange.id'))
+
+    __mapper_args__ = {
+        'polymorphic_identity': 'pystock_security',
+        'polymorphic_on': security_type
+    }
 
 
 class Stock(Base):
@@ -266,7 +268,7 @@ class FXRates(Base):
     """
     __tablename__ = 'pystock_fxrates'
     __table_args__ = (
-            UniqueConstraint('date', 'monetary_source_id', name='unique_monetary_date')
+            UniqueConstraint('date', 'monetary_source_id', name='unique_monetary_date'),
     )
 
     id = Column(Integer, primary_key=True)

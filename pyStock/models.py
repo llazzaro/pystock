@@ -375,4 +375,3 @@ class News(Base):
 #        The minimum upward or downward movement in the price of a security.
 #        The term "tick" also refers to the change in the price of a security from trade to trade.
 #        Since 2001, with the advent of decimalization, the minimum tick size for stocks trading above $1 is 1 cent.
-

@@ -42,8 +42,8 @@ class Broker(Base):
     phone = Column(String)
     identification_code = Column(String, unique=True)
 
-    def commission(self, asset):
-        pass
+    def __str__(self):
+        return self.name or 'No Name'
 
 
 class Account(Base):
@@ -90,8 +90,11 @@ class Security(Base):
         'polymorphic_on': security_type
     }
 
+    def __str__(self):
+        return self.symbol
 
-class Stock(Base):
+
+class Stock(Security):
     """
         A stock or any other security representing an ownership interest.
         An equity investment generally refers to the buying and holding of
@@ -101,7 +104,7 @@ class Stock(Base):
     """
     __tablename__ = 'pystock_stock'
 
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, ForeignKey('pystock_security.id'), primary_key=True)
     company = relationship("Company", backref="stock")
     company_id = Column(Integer, ForeignKey('pystock_company.id'))
 
@@ -197,6 +200,8 @@ class Order(Base):
     share = Column(Integer)
     executed_on = Column(DateTime, onupdate=datetime.datetime.now)
     filled_on = Column(DateTime, onupdate=datetime.datetime.now)
+    owner = relationship("Owner", backref="orders")
+    owner_id = Column(Integer, ForeignKey('pystock_owner.id'))
 
 
 class Split(Base):
@@ -301,15 +306,15 @@ class Book(Base):
     id = Column(Integer, primary_key=True)
 
     name = Column(String)
-    user = relationship("User", backref="trades")
-    user_id = Column(Integer, ForeignKey('pystock_user.id'))
+    owner = relationship("Owner", backref="trades")
+    owner_id = Column(Integer, ForeignKey('pystock_owner.id'))
 
 
-class User(Base):
+class Owner(Base):
     """
-        Represent how is buying. usually this class is associated with another user model in your app
+        Represent how is buying. usually this class is associated with another owner model in your app
     """
-    __tablename__ = 'pystock_user'
+    __tablename__ = 'pystock_owner'
     id = Column(Integer, primary_key=True)
     name = Column(String)
 
@@ -321,8 +326,8 @@ class User(Base):
 #    trade_date = Column(DateTime)
 #    price = Column(DECIMAL)
 #    amount = Column(DECIMAL)
-#    user = relationship("User", backref="trades")
-#    user_id = Column(Integer, ForeignKey('pystock_user.id'))
+#    owner = relationship("Owner", backref="trades")
+#    owner_id = Column(Integer, ForeignKey('pystock_owner.id'))
 #    broker = relationship("Broker", backref="trades")
 #    broker_id = Column(Integer, ForeignKey('pystock_broker.id'))
 #    security = relationship("Security", backref="trades")

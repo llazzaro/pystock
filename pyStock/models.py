@@ -55,6 +55,11 @@ class Account(Base):
     id = Column(Integer, primary_key=True)
     broker_id = Column(Integer, ForeignKey('pystock_broker.id'))
     broker = relationship("Broker", backref="accounts")
+    owner = relationship("Owner", backref="orders")
+    owner_id = Column(Integer, ForeignKey('pystock_owner.id'))
+
+    def __str__(self):
+        return 'Account for {0} broker {1}'.format(self.owner.user[0].email, self.broker.name)
 
 
 class Asset(Base):
@@ -185,23 +190,66 @@ class Order(Base):
         time at which the order can be executed. These order instructions will affect the investor's
         profit or loss on the transaction and, in some cases, whether the order is executed at all.
     """
-    OPEN = 'open'
-    FILLED = 'filled'
-    CANCELED = 'canceled'
 
     __tablename__ = 'pystock_order'
     id = Column(Integer, primary_key=True)
+    order_type = Column(String(50))
+
+    __mapper_args__ = {
+        'polymorphic_identity': 'pystock_order',
+        'polymorphic_on': order_type
+    }
+
     account_id = Column(Integer, ForeignKey('pystock_account.id'))
     account = relationship("Account", backref="orders")
-    asset_id = Column(Integer, ForeignKey('pystock_asset.id'))
-    asset = relationship("Asset", backref="order")
+    security_id = Column(Integer, ForeignKey('pystock_security.id'))
+    security = relationship("Security", backref="order")
     order_id = Column(String, unique=True)
     price = Column(DECIMAL)
     share = Column(Integer)
-    executed_on = Column(DateTime, onupdate=datetime.datetime.now)
+    next_step = relationship("Order", remote_side=[id])
+    next_step_id = Column(Integer, ForeignKey('pystock_order.id'))
+
+
+class OpenOrder(Order):
+    __tablename__ = 'pystock_open_order'
+    open_id = Column(Integer, ForeignKey('pystock_order.id'), primary_key=True)
+    open_on = Column(DateTime, onupdate=datetime.datetime.now)
+
+    excluded_form_columns = ('order_type',)
+    __mapper_args__ = {
+        'polymorphic_identity': 'pystock_open_order',
+    }
+
+
+class CanceledOrder(Order):
+    __tablename__ = 'pystock_canceled_order'
+    cancel_id = Column(Integer, ForeignKey('pystock_order.id'), primary_key=True)
+    canceled_on = Column(DateTime, onupdate=datetime.datetime.now)
+
+    __mapper_args__ = {
+        'polymorphic_identity': 'pystock_canceled_order',
+    }
+
+
+class FilledOrder(Order):
+    __tablename__ = 'pystock_filled_order'
+    filed_id = Column(Integer, ForeignKey('pystock_order.id'), primary_key=True)
     filled_on = Column(DateTime, onupdate=datetime.datetime.now)
-    owner = relationship("Owner", backref="orders")
-    owner_id = Column(Integer, ForeignKey('pystock_owner.id'))
+
+    __mapper_args__ = {
+        'polymorphic_identity': 'pystock_filled_order',
+    }
+
+
+class ClosedOrder(Order):
+    __tablename__ = 'pystock_cosed_order'
+    closed_id = Column(Integer, ForeignKey('pystock_order.id'), primary_key=True)
+    closed_on = Column(DateTime, onupdate=datetime.datetime.now)
+
+    __mapper_args__ = {
+        'polymorphic_identity': 'pystock_cosed_order',
+    }
 
 
 class Split(Base):

@@ -55,7 +55,7 @@ class Account(Base):
     id = Column(Integer, primary_key=True)
     broker_id = Column(Integer, ForeignKey('pystock_broker.id'))
     broker = relationship("Broker", backref="accounts")
-    owner = relationship("Owner", backref="orders")
+    owner = relationship("Owner", backref="accounts")
     owner_id = Column(Integer, ForeignKey('pystock_owner.id'))
 
     def __str__(self):

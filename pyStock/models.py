@@ -118,10 +118,10 @@ class Stock(Security):
     }
 
 
-class Bond(Base):
+class Bond(Security):
     __tablename__ = 'pystock_bond'
 
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, ForeignKey('pystock_security.id'), primary_key=True)
 
     __mapper_args__ = {
         'polymorphic_identity': 'pystock_bond',

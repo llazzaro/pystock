@@ -343,6 +343,9 @@ class Company(Base):
 
     name = Column(String)
 
+    def __str__(self):
+        return 'Company {0}'.format(self.name)
+
 
 class Book(Base):
     """
@@ -397,6 +400,9 @@ class Exchange(Base):
     code = Column(String)
     name = Column(String)
 #    country =
+
+    def __str__(self):
+        return 'Exchange {0} {1}'.format(self.code, self.name)
 
 
 class Liability(Base):

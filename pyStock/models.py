@@ -207,48 +207,66 @@ class Order(Base):
     order_id = Column(String, unique=True)
     price = Column(DECIMAL)
     share = Column(Integer)
-    next_step = relationship("Order", remote_side=[id])
-    next_step_id = Column(Integer, ForeignKey('pystock_order.id'))
+    stage = relationship("OrderStage", backref="orders")
+    stage_id = Column(Integer, ForeignKey('pystock_stage_order.id'))
+
+    def __str__(self):
+        return '{0} Total {1}'.format(self.order_type, self.share * self.price)
 
 
-class OpenOrder(Order):
-    __tablename__ = 'pystock_open_order'
-    open_id = Column(Integer, ForeignKey('pystock_order.id'), primary_key=True)
-    open_on = Column(DateTime, onupdate=datetime.datetime.now)
+class SellOrder(Order):
+    __tablename__ = 'pystock_sell_order'
+    id = Column(Integer, ForeignKey('pystock_order.id'), primary_key=True)
+
+
+class BuyOrder(Order):
+    __tablename__ = 'pystock_buy_order'
+    id = Column(Integer, ForeignKey('pystock_order.id'), primary_key=True)
+
+
+class OrderStage(Base):
+    __tablename__ = 'pystock_stage_order'
+    id = Column(Integer, primary_key=True)
+
+    stage_type = Column(String(50))
+    executed_on = Column(DateTime, onupdate=datetime.datetime.now)
+    next_stage = relationship("OrderStage", remote_side=[id])
+    next_stage_id = Column(Integer, ForeignKey('pystock_stage_order.id'))
+
+    __mapper_args__ = {
+        'polymorphic_identity': 'pystock_order_stage',
+        'polymorphic_on': stage_type
+    }
+
+    def __str__(self):
+        return '{0} {1}'.format(self.stage_type, self.executed_on)
+
+
+class OpenOrderStage(OrderStage):
+    __tablename__ = 'pystock_open_stage_order'
+    id = Column(Integer, ForeignKey('pystock_stage_order.id'), primary_key=True)
 
     excluded_form_columns = ('order_type',)
     __mapper_args__ = {
-        'polymorphic_identity': 'pystock_open_order',
+        'polymorphic_identity': 'pystock_stage_open_order',
     }
 
 
-class CanceledOrder(Order):
-    __tablename__ = 'pystock_canceled_order'
-    cancel_id = Column(Integer, ForeignKey('pystock_order.id'), primary_key=True)
-    canceled_on = Column(DateTime, onupdate=datetime.datetime.now)
+class CancelOrderStage(OrderStage):
+    __tablename__ = 'pystock_cancel_stage_order'
+    id = Column(Integer, ForeignKey('pystock_stage_order.id'), primary_key=True)
 
     __mapper_args__ = {
-        'polymorphic_identity': 'pystock_canceled_order',
+        'polymorphic_identity': 'pystock_stage_cancel_order',
     }
 
 
-class FilledOrder(Order):
-    __tablename__ = 'pystock_filled_order'
-    filed_id = Column(Integer, ForeignKey('pystock_order.id'), primary_key=True)
-    filled_on = Column(DateTime, onupdate=datetime.datetime.now)
+class FillOrderStage(OrderStage):
+    __tablename__ = 'pystock_fill_stage_order'
+    id = Column(Integer, ForeignKey('pystock_stage_order.id'), primary_key=True)
 
     __mapper_args__ = {
-        'polymorphic_identity': 'pystock_filled_order',
-    }
-
-
-class ClosedOrder(Order):
-    __tablename__ = 'pystock_cosed_order'
-    closed_id = Column(Integer, ForeignKey('pystock_order.id'), primary_key=True)
-    closed_on = Column(DateTime, onupdate=datetime.datetime.now)
-
-    __mapper_args__ = {
-        'polymorphic_identity': 'pystock_cosed_order',
+        'polymorphic_identity': 'pystock_stage_fill_order',
     }
 
 

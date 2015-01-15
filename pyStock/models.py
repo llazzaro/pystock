@@ -218,10 +218,18 @@ class SellOrder(Order):
     __tablename__ = 'pystock_sell_order'
     id = Column(Integer, ForeignKey('pystock_order.id'), primary_key=True)
 
+    __mapper_args__ = {
+        'polymorphic_identity': 'pystock_sell_order',
+    }
+
 
 class BuyOrder(Order):
     __tablename__ = 'pystock_buy_order'
     id = Column(Integer, ForeignKey('pystock_order.id'), primary_key=True)
+
+    __mapper_args__ = {
+        'polymorphic_identity': 'pystock_buy_order',
+    }
 
 
 class OrderStage(Base):

@@ -444,3 +444,45 @@ class Liability(Base):
 #        The minimum upward or downward movement in the price of a security.
 #        The term "tick" also refers to the change in the price of a security from trade to trade.
 #        Since 2001, with the advent of decimalization, the minimum tick size for stocks trading above $1 is 1 cent.
+
+
+class Historical(Base):
+    """
+    """
+    __tablename__ = 'pystock_historical'
+    id = Column(Integer, primary_key=True)
+
+    date = Column(DateTime)
+    close_price = Column(DECIMAL)
+    high_price = Column(DECIMAL)
+    low_price = Column(DECIMAL)
+    open_price = Column(DECIMAL)
+    unadj = Column(DECIMAL)
+    volume = Column(DECIMAL)
+
+
+class ExchangeHistorical(Historical):
+    """
+    """
+    __tablename__ = 'pystock_exchange_historical'
+    id = Column(Integer, ForeignKey('pystock_historical.id'), primary_key=True)
+    exchange_id = Column(Integer, ForeignKey('pystock_exchange.id'))
+    exchange = relationship("Exchange", backref="historical")
+
+    __mapper_args__ = {
+        'polymorphic_identity': 'pystock_exchange_historical',
+    }
+
+
+class SecurityHistorical(Historical):
+    """
+    """
+    __tablename__ = 'pystock_security_historical'
+
+    id = Column(Integer, ForeignKey('pystock_historical.id'), primary_key=True)
+    security_id = Column(Integer, ForeignKey('pystock_security.id'))
+    security = relationship("Security", backref="historical")
+
+    __mapper_args__ = {
+        'polymorphic_identity': 'pystock_security_historical',
+    }

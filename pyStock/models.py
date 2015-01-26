@@ -490,12 +490,14 @@ class SecurityHistorical(Historical):
 
 class CloseOrder(Base):
     """
+        This is used to relate an open buy with the sell.
+        It's useful for tracking earnings
     """
-    __table__ = 'pystock_close_order'
+    __tablename__ = 'pystock_close_order'
 
-    id = Column(Integer, ForeignKey('pystock_historical.id'), primary_key=True)
+    id = Column(Integer, primary_key=True)
 
-    buy_order_id = Column(Integer, ForeignKey('pystock_buy_order.id'))
     buy_order = relationship("BuyOrder", backref="closed")
-    sell_order_id = Column(Integer, ForeignKey('pystock_sell_order.id'))
+    buy_order_id = Column(Integer, ForeignKey('pystock_buy_order.id'))
     sell_order = relationship("SellOrder", backref="closed")
+    sell_order_id = Column(Integer, ForeignKey('pystock_sell_order.id'))

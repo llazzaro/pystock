@@ -112,6 +112,8 @@ class Stock(Security):
     id = Column(Integer, ForeignKey('pystock_security.id'), primary_key=True)
     company = relationship("Company", backref="stock")
     company_id = Column(Integer, ForeignKey('pystock_company.id'))
+    adr = relationship("Stock", backref="original")
+    adr_id = Column(Integer, ForeignKey('pystock_stock.id'))
 
     __mapper_args__ = {
         'polymorphic_identity': 'pystock_stock',

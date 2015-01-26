@@ -486,3 +486,16 @@ class SecurityHistorical(Historical):
     __mapper_args__ = {
         'polymorphic_identity': 'pystock_security_historical',
     }
+
+
+class CloseOrder(Base):
+    """
+    """
+    __table__ = 'pystock_close_order'
+
+    id = Column(Integer, ForeignKey('pystock_historical.id'), primary_key=True)
+
+    buy_order_id = Column(Integer, ForeignKey('pystock_buy_order.id'))
+    buy_order = relationship("BuyOrder", backref="closed")
+    sell_order_id = Column(Integer, ForeignKey('pystock_sell_order.id'))
+    sell_order = relationship("SellOrder", backref="closed")

@@ -87,7 +87,7 @@ class Security(Base):
     issuer_name = Column(String, nullable=True)
     ISIN = Column(String(12), nullable=False, unique=True)
     CFI = Column(String(6), nullable=True, unique=True)
-    exchange = relationship("Exchange", backref="secutiries")
+    exchange = relationship("Exchange", backref="securities")
     exchange_id = Column(Integer, ForeignKey('pystock_exchange.id'))
 
     __mapper_args__ = {
@@ -112,8 +112,8 @@ class Stock(Security):
     id = Column(Integer, ForeignKey('pystock_security.id'), primary_key=True)
     company = relationship("Company", backref="stock")
     company_id = Column(Integer, ForeignKey('pystock_company.id'))
-    adr = relationship("Stock", backref="original")
     adr_id = Column(Integer, ForeignKey('pystock_stock.id'))
+    adr = relationship("Stock", foreign_keys=adr_id)
 
     __mapper_args__ = {
         'polymorphic_identity': 'pystock_stock',

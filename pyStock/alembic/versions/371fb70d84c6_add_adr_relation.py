@@ -15,7 +15,7 @@ import sqlalchemy as sa
 
 
 def upgrade():
-    op.add_column(u'pystock_stock', sa.Column('adr', sa.Integer(), nullable=True))
+    op.add_column(u'pystock_stock', sa.Column('adr_id', sa.Integer(), nullable=True))
 
 
 def downgrade():

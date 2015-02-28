@@ -112,8 +112,6 @@ class Stock(Security):
     id = Column(Integer, ForeignKey('pystock_security.id'), primary_key=True)
     company = relationship("Company", backref="stock")
     company_id = Column(Integer, ForeignKey('pystock_company.id'))
-    adr_id = Column(Integer, ForeignKey('pystock_stock.id'))
-    adr = relationship("Stock", foreign_keys=adr_id)
 
     __mapper_args__ = {
         'polymorphic_identity': 'pystock_stock',
@@ -142,7 +140,7 @@ class Trade(Base):
     broker_buyer = relationship("Broker", backref="buyer_trades", foreign_keys=[broker_buyer_id])
     broker_seller_id = Column(Integer, ForeignKey('pystock_broker.id'))
     broker_seller = relationship("Broker", backref="seller_trades", foreign_keys=[broker_seller_id])
-    price = Column(DECIMAL)
+    _price = Column(DECIMAL)
     amount = Column(DECIMAL)
     volume = Column(Integer)
     nominal_amount = Column(Integer)
@@ -296,8 +294,8 @@ class Split(Base):
     announce_date = Column(DateTime)
     split_date = Column(DateTime)
     ratio = Column(Integer)
-    asset_id = Column(Integer, ForeignKey('pystock_asset.id'))
-    asset = relationship("Asset", backref="split")
+    security_id = Column(Integer, ForeignKey('pystock_security.id'))
+    security = relationship("Security", backref="splits")
 
 
 class Dividend(Base):
@@ -315,8 +313,22 @@ class Dividend(Base):
     record_date = Column(DateTime)
     payment_date = Column(DateTime)
     amount = Column(DECIMAL)
-    asset_id = Column(Integer, ForeignKey('pystock_asset.id'))
-    asset = relationship("Asset", backref="dividends")
+    security_id = Column(Integer, ForeignKey('pystock_security.id'))
+    security = relationship("security", backref="dividends")
+
+
+class ADR(Base):
+    """
+    """
+    __tablename__ = 'pystock_adr'
+    id = Column(Integer, primary_key=True)
+    ratio = Column(Integer)
+    adr_security_id = Column(Integer, ForeignKey('pystock_security.id'))
+    adr_security = relationship("Stock", backref="ADROrigin")
+    security_id = Column(Integer, ForeignKey('pystock_security.id'))
+    security = relationship('Stock', backref="ADRDestination")
+    exchange_id = Column(Integer, ForeignKey('pystock_exchange.id'))
+    exchange = relationship("Exchange", backref="ADR")
 
 
 class Currency(Base):

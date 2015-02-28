@@ -215,6 +215,10 @@ class Order(Base):
     def __str__(self):
         return '{0} Total {1}'.format(self.order_type, self.share * self.price)
 
+    @property
+    def effective_date(self):
+        return self.stage.executed_on
+
 
 class SellOrder(Order):
     __tablename__ = 'pystock_sell_order'
@@ -498,7 +502,7 @@ class OrderTracking(Base):
     __tablename__ = 'pystock_order_tracking'
 
     id = Column(Integer, primary_key=True)
-    share = Column(Integer, nullable=False)
+    shares = Column(Integer, nullable=False)
     buy_order = relationship("BuyOrder", backref="tracking")
     buy_order_id = Column(Integer, ForeignKey('pystock_buy_order.id'))
     sell_order = relationship("SellOrder", backref="tracking")

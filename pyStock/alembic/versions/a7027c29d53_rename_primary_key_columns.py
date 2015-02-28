@@ -20,7 +20,7 @@ def upgrade():
     op.alter_column("pystock_open_order", "open_id", name="id")
     op.alter_column("pystock_fill_order", "filled_id", name="id")
     op.alter_column("pystock_cancel_order", "cancel_id", name="id")
-    pass
+    op.add_column(u'pystock_order', sa.Column('security_id', sa.Integer(), nullable=True))
 
 
 def downgrade():

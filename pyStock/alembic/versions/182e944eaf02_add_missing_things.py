@@ -15,8 +15,8 @@ import sqlalchemy as sa
 
 
 def upgrade():
-    op.add_column(u'pystock_order_tracking', sa.Column('buy_order_id', sa.Integer(), nullable=False))
-    op.add_column(u'pystock_order_tracking', sa.Column('sell_order_id', sa.Integer(), nullable=False))
+#    op.add_column(u'pystock_order_tracking', sa.Column('buy_order_id', sa.Integer(), nullable=False))
+#    op.add_column(u'pystock_order_tracking', sa.Column('sell_order_id', sa.Integer(), nullable=False))
     op.create_foreign_key("pystock_tracking_sell_id_fkey", "pystock_order_tracking", "pystock_sell_order", ["sell_order_id"], ["id"])
     op.create_foreign_key("pystock_tracking_buy_id_fkey", "pystock_order_tracking", "pystock_buy_order", ["buy_order_id"], ["id"])
 

@@ -39,7 +39,6 @@ def upgrade():
         sa.PrimaryKeyConstraint('id'),
         sa.Column('closed_on', sa.DateTime(), nullable=True),
     )
-    op.create_foreign_key("pystock_order_open_order_polymorphic_fkey", "pystock_order", "pystock_open_order", ["id"], ["open_id"])
     op.create_foreign_key("pystock_order_canceled_order_polymorphic_fkey", "pystock_order", "pystock_canceled_order", ["id"], ["cancel_id"])
     op.create_foreign_key("pystock_order_filled_order_polymorphic_fkey", "pystock_order", "pystock_filled_order", ["id"], ["filled_id"])
     op.create_foreign_key("pystock_order_cloed_order_polymorphic_fkey", "pystock_order", "pystock_closed_order", ["id"], ["closed_id"])

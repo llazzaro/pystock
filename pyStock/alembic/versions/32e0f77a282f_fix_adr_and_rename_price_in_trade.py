@@ -15,7 +15,6 @@ import sqlalchemy as sa
 
 
 def upgrade():
-    op.alter_column("pystock_trade", "price", name="_price")
     op.alter_column("pystock_split", "asset_id", name="security_id")
     op.alter_column("pystock_dividend", "asset_id", name="security_id")
 
@@ -32,4 +31,6 @@ def upgrade():
 
 
 def downgrade():
-    pass
+    op.drop_table('pystock_adr')
+    op.alter_column("pystock_dividend", "security_id", name="asset_id")
+    op.alter_column("pystock_split", "security_id", name="asset_id")

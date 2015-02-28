@@ -314,7 +314,7 @@ class Dividend(Base):
     payment_date = Column(DateTime)
     amount = Column(DECIMAL)
     security_id = Column(Integer, ForeignKey('pystock_security.id'))
-    security = relationship("security", backref="dividends")
+    security = relationship("Security", backref="dividends")
 
 
 class ADR(Base):
@@ -324,9 +324,9 @@ class ADR(Base):
     id = Column(Integer, primary_key=True)
     ratio = Column(Integer)
     adr_security_id = Column(Integer, ForeignKey('pystock_security.id'))
-    adr_security = relationship("Stock", backref="ADROrigin")
+    adr_security = relationship("Stock", backref="ADROrigin", foreign_keys='ADR.adr_security_id')
     security_id = Column(Integer, ForeignKey('pystock_security.id'))
-    security = relationship('Stock', backref="ADRDestination")
+    security = relationship('Stock', backref="ADRDestination", foreign_keys='ADR.security_id')
     exchange_id = Column(Integer, ForeignKey('pystock_exchange.id'))
     exchange = relationship("Exchange", backref="ADR")
 

@@ -5,6 +5,7 @@ from pyStock import Base
 
 from sqlalchemy.sql.expression import ClauseElement
 from sqlalchemy import UniqueConstraint
+from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import relationship
 from sqlalchemy import (
     Column,
@@ -140,7 +141,7 @@ class Trade(Base):
     broker_buyer = relationship("Broker", backref="buyer_trades", foreign_keys=[broker_buyer_id])
     broker_seller_id = Column(Integer, ForeignKey('pystock_broker.id'))
     broker_seller = relationship("Broker", backref="seller_trades", foreign_keys=[broker_seller_id])
-    _price = Column(DECIMAL)
+    price = Column(DECIMAL)
     amount = Column(DECIMAL)
     volume = Column(Integer)
     nominal_amount = Column(Integer)
@@ -205,8 +206,8 @@ class Order(Base):
     security_id = Column(Integer, ForeignKey('pystock_security.id'))
     security = relationship("Security", backref="order")
     order_id = Column(String, unique=True)
-    price = Column(DECIMAL)
-    share = Column(Integer)
+    _price = Column(DECIMAL)
+    _shares = Column(Integer)
     stage = relationship("OrderStage", backref="orders")
     stage_id = Column(Integer, ForeignKey('pystock_stage_order.id'))
 
@@ -217,6 +218,14 @@ class Order(Base):
     def effective_date(self):
         return self.stage.executed_on
 
+    def calculate_split(self, res, func):
+        splits = filter(lambda split: split.split_date >= self.stage.executed_on, self.security.splits)
+        for split in splits:
+            if self.stage.executed_on >= split.split_date:
+                continue
+            res = func(res, split.ratio)
+        return res
+
 
 class SellOrder(Order):
     __tablename__ = 'pystock_sell_order'
@@ -226,6 +235,16 @@ class SellOrder(Order):
         'polymorphic_identity': 'pystock_sell_order',
     }
 
+    @hybrid_property
+    def price(self):
+        func = lambda price, ratio: price / ratio
+        return self.calculate_split(self._price, func)
+
+    @hybrid_property
+    def shares(self):
+        func = lambda price, ratio: price * ratio
+        return self.calculate_split(self._shares, func)
+
 
 class BuyOrder(Order):
     __tablename__ = 'pystock_buy_order'
@@ -234,6 +253,16 @@ class BuyOrder(Order):
     __mapper_args__ = {
         'polymorphic_identity': 'pystock_buy_order',
     }
+
+    @hybrid_property
+    def price(self):
+        func = lambda price, ratio: price / ratio
+        return self.calculate_split(self._price, func)
+
+    @hybrid_property
+    def shares(self):
+        func = lambda price, ratio: price * ratio
+        return self.calculate_split(self._shares, func)
 
 
 class OrderStage(Base):

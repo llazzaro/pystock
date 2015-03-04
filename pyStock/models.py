@@ -40,7 +40,14 @@ class Broker(Base):
     id = Column(Integer, primary_key=True)
     name = Column(String)
     address = Column(String)
+    # usually phone and caegory are fks, we
+    # save this for informational purposes
+    # to aovid complex model on no so relevant info.
+    # we only want to display this
     phone = Column(String)
+    category = Column(String)
+    web = Column(String)
+    email = Column(String)
     identification_code = Column(String, unique=True)
 
     def __str__(self):

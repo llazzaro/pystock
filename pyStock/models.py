@@ -142,7 +142,7 @@ class Tick(Base):
         Since 2001, with the advent of decimalization, the minimum tick size for stocks trading above $1 is 1 cent.
     """
 
-    __tablename__ = 'pystock_trade'
+    __tablename__ = 'pystock_tick'
 
     id = Column(Integer, primary_key=True)
 

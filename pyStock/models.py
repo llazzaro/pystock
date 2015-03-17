@@ -14,7 +14,6 @@ from sqlalchemy import (
     ForeignKey,
     DateTime,
     DECIMAL,
-    Date,
     Boolean
 )
 
@@ -136,9 +135,13 @@ class Bond(Security):
     }
 
 
-class Trade(Base):
+class Tick(Base):
     """
+        The minimum upward or downward movement in the price of a security.
+        The term "tick" also refers to the change in the price of a security from trade to trade.
+        Since 2001, with the advent of decimalization, the minimum tick size for stocks trading above $1 is 1 cent.
     """
+
     __tablename__ = 'pystock_trade'
 
     id = Column(Integer, primary_key=True)
@@ -158,25 +161,6 @@ class Trade(Base):
     fraction = Column(Boolean)
     expiration = Column(String)
     register_number = Column(String, unique=True)
-
-
-class Quote(Base):
-    """
-        This denotes the prevailing buy and sell prices for a particular financial instrument.
-        Quotes are displayed as: sell price – buy price.
-        For example, if 125.7 – 125.9 is the quote: 125.7 is the sell price and 125.9 is the buy price.
-    """
-    __tablename__ = 'pystock_quote'
-    id = Column(Integer, primary_key=True)
-    created_on = Column(DateTime, onupdate=datetime.datetime.now)
-    tick_date = Column(Date)
-    px_open = Column(DECIMAL)
-    px_close = Column(DECIMAL)
-    px_high = Column(DECIMAL)
-    px_low = Column(DECIMAL)
-    volume = Column(Integer)
-    asset_id = Column(Integer, ForeignKey('pystock_asset.id'))
-    asset = relationship("Asset", backref="quotes")
 
 
 class Action(object):
@@ -493,17 +477,15 @@ class Liability(Base):
     __tablename__ = 'pystock_liability'
     id = Column(Integer, primary_key=True)
 
-# class Tick
 
-#        The minimum upward or downward movement in the price of a security.
-#        The term "tick" also refers to the change in the price of a security from trade to trade.
-#        Since 2001, with the advent of decimalization, the minimum tick size for stocks trading above $1 is 1 cent.
-
-
-class Historical(Base):
+class Quote(Base):
     """
+        This denotes the prevailing buy and sell prices for a particular financial instrument.
+        Quotes are displayed as: sell price – buy price.
+        For example, if 125.7 – 125.9 is the quote: 125.7 is the sell price and 125.9 is the buy price.
     """
-    __tablename__ = 'pystock_historical'
+
+    __tablename__ = 'pystock_quote'
     id = Column(Integer, primary_key=True)
 
     date = Column(DateTime)
@@ -515,30 +497,30 @@ class Historical(Base):
     volume = Column(DECIMAL)
 
 
-class ExchangeHistorical(Historical):
+class ExchangeQuote(Quote):
     """
     """
-    __tablename__ = 'pystock_exchange_historical'
-    id = Column(Integer, ForeignKey('pystock_historical.id'), primary_key=True)
+    __tablename__ = 'pystock_exchange_quote'
+    id = Column(Integer, ForeignKey('pystock_quote.id'), primary_key=True)
     exchange_id = Column(Integer, ForeignKey('pystock_exchange.id'))
-    exchange = relationship("Exchange", backref="historical")
+    exchange = relationship("Exchange", backref="quotes")
 
     __mapper_args__ = {
-        'polymorphic_identity': 'pystock_exchange_historical',
+        'polymorphic_identity': 'pystock_exchange_quote',
     }
 
 
-class SecurityHistorical(Historical):
+class SecurityQuote(Quote):
     """
     """
-    __tablename__ = 'pystock_security_historical'
+    __tablename__ = 'pystock_security_quote'
 
-    id = Column(Integer, ForeignKey('pystock_historical.id'), primary_key=True)
+    id = Column(Integer, ForeignKey('pystock_quote.id'), primary_key=True)
     security_id = Column(Integer, ForeignKey('pystock_security.id'))
-    security = relationship("Security", backref="historical")
+    security = relationship("Security", backref="quotes")
 
     __mapper_args__ = {
-        'polymorphic_identity': 'pystock_security_historical',
+        'polymorphic_identity': 'pystock_security_quote',
     }
 
 

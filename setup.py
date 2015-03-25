@@ -14,7 +14,7 @@ requires = [
 
 setup(
     name='pyStock',
-    version='0.0.1',
+    version='0.0.5',
     description='A stock market model for persistence using SQLAlchemy',
     long_description=README + '\n\n' + CHANGES,
     classifiers=[

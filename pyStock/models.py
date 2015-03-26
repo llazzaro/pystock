@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 import datetime
 
-from pyStock import Base
 
 from sqlalchemy.sql.expression import ClauseElement
 from sqlalchemy import UniqueConstraint
@@ -16,6 +15,8 @@ from sqlalchemy import (
     DECIMAL,
     Boolean
 )
+
+from pyStock import Base
 
 
 def get_or_create(session, model, defaults=None, **kwargs):
@@ -217,6 +218,9 @@ class Order(Base):
             res = func(res, split.ratio)
         return res
 
+    def validate(self, account):
+        raise NotImplementedError('Abstract method called')
+
 
 class SellOrder(Order):
     __tablename__ = 'pystock_sell_order'
@@ -236,6 +240,9 @@ class SellOrder(Order):
         func = lambda price, ratio: price * ratio
         return self.calculate_split(self._shares, func)
 
+    def validate(self, account):
+        raise NotImplementedError('Lazy')
+
 
 class BuyOrder(Order):
     __tablename__ = 'pystock_buy_order'
@@ -254,6 +261,11 @@ class BuyOrder(Order):
     def shares(self):
         func = lambda price, ratio: price * ratio
         return self.calculate_split(self._shares, func)
+
+    def validate(self, account):
+        cost = self.shares * self.price + account.broker.commision(self)
+        if cost > account.cash:
+            raise Exception('Not Enough Money')
 
 
 class OrderStage(Base):

@@ -462,23 +462,6 @@ class Owner(Base):
     name = Column(String)
 
 
-# class Trade(Base):
-#    __tablename__ = 'pystock_trade'
-#    id = Column(Integer, primary_key=True)
-#    created_on = Column(DateTime, onupdate=datetime.datetime.now)
-#    trade_date = Column(DateTime)
-#    price = Column(DECIMAL)
-#    amount = Column(DECIMAL)
-#    owner = relationship("Owner", backref="trades")
-#    owner_id = Column(Integer, ForeignKey('pystock_owner.id'))
-#    broker = relationship("Broker", backref="trades")
-#    broker_id = Column(Integer, ForeignKey('pystock_broker.id'))
-#    security = relationship("Security", backref="trades")
-#    security_id = Column(Integer, ForeignKey('pystock_broker.id'))
-#    operation_code = Column(String)
-#    trade_type = Column(String)  # Buy or Sell
-
-
 class Exchange(Base):
     """
         A marketplace in which securities, commodities, derivatives and other financial instruments are traded.
@@ -491,7 +474,6 @@ class Exchange(Base):
 
     code = Column(String)
     name = Column(String)
-#    country =
 
     def __str__(self):
         return 'Exchange {0} {1}'.format(self.code, self.name)

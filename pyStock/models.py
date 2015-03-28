@@ -69,7 +69,6 @@ class Account(Base):
     def __str__(self):
         return 'Account for {0} broker {1}'.format(self.owner.user[0].email, self.broker.name)
 
-
     @hybrid_property
     def cash(self):
         raise NotImplementedError('Lazy')
@@ -77,6 +76,13 @@ class Account(Base):
     @hybrid_property
     def holdings(self):
         raise NotImplementedError('Lazy')
+
+    def execute(self, order, tick):
+        pass
+
+    def total_value(self):
+        return self.cash + sum(self.holdings)
+
 
 class Asset(Base):
     """
@@ -226,6 +232,9 @@ class Order(Base):
             res = func(res, split.ratio)
         return res
 
+    def is_order_met(self):
+        raise NotImplementedError('Abstrat method called')
+
 
 class SellOrder(Order):
     __tablename__ = 'pystock_sell_order'
@@ -245,6 +254,13 @@ class SellOrder(Order):
         func = lambda price, ratio: price * ratio
         return self.calculate_split(self._shares, func)
 
+    def is_order_met(self, tick):
+        if Type.MARKET == self.type:
+            return True
+        elif Type.STOP == self.type and float(tick.low) <= float(self.price):
+            return True
+        return False
+
 
 def validate_sell_order(mapper, connection, target):
     if target.symbol not in target.account.holdings:
@@ -253,6 +269,10 @@ def validate_sell_order(mapper, connection, target):
         raise Exception('Transition fails validation: share {0} is not enough as {1}'.format(target.share, target.accont.holdings[target.symbol]))
     elif target.account.commision > target.account.cash:
         raise Exception('Transition fails validation: cash {0} is not enough for commission {1}'.format(target.account.cash, target.account.commision))
+
+        close_price = None
+        if target.type == 'STOP' and target.price > close_price:
+            raise Exception("Sell stop order price %s shouldn't be higher than market price %s" % (target.price, close_price))
 
 event.listen(SellOrder, 'before_insert', validate_sell_order)
 
@@ -275,6 +295,13 @@ class BuyOrder(Order):
         func = lambda price, ratio: price * ratio
         return self.calculate_split(self._shares, func)
 
+    def is_order_met(self, tick):
+        if Type.MARKET == self.type:
+            return True
+        elif Type.LIMIT == self.type and float(tick.low) <= float(self.price):
+            return True
+        return False
+
 
 def validate_buy_order(mapper, connection, target):
     cost = target.shares * target.price + target.account.broker.commision(target)
@@ -282,6 +309,46 @@ def validate_buy_order(mapper, connection, target):
         raise Exception('Transition fails validation: cash {0} is smaller than cost {1}'.format(target.account.cash, cost))
 
 event.listen(BuyOrder, 'before_insert', validate_buy_order)
+
+
+class SellShortOrder(Order):
+
+    __tablename__ = 'pystock_sell_short_order'
+    id = Column(Integer, ForeignKey('pystock_order.id'), primary_key=True)
+
+    __mapper_args__ = {
+        'polymorphic_identity': 'pystock_buy_order',
+    }
+
+    def is_order_met(self, tick):
+        if Type.MARKET == self.type:
+            return True
+        elif Type.LIMIT == self.type and float(tick.high) >= float(self.price):
+            return True
+        return False
+
+
+class BuyToCoverOrder(Order):
+
+    __tablename__ = 'pystock_buy_to_cover_order'
+    id = Column(Integer, ForeignKey('pystock_order.id'), primary_key=True)
+
+    __mapper_args__ = {
+        'polymorphic_identity': 'pystock_buy_order',
+    }
+
+    def is_order_met(self, tick):
+        if Type.MARKET == self.type:
+            return True
+        elif Type.STOP == self.type and float(tick.high) >= float(self.price):
+            return True
+        return False
+
+
+def validate_buy_to_cover(mapper, connection, target):
+    close_price = None
+    if Type.STOP == target.type and target.price < close_price:
+        raise Exception("Buy to cover stop target price %s shouldn't be higher than market price %s" % (target.price, close_price))
 
 
 class OrderStage(Base):

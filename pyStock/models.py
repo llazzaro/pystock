@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import datetime
 
-
+from sqlalchemy import event
 from sqlalchemy.sql.expression import ClauseElement
 from sqlalchemy import UniqueConstraint
 from sqlalchemy.ext.hybrid import hybrid_property
@@ -69,6 +69,14 @@ class Account(Base):
     def __str__(self):
         return 'Account for {0} broker {1}'.format(self.owner.user[0].email, self.broker.name)
 
+
+    @hybrid_property
+    def cash(self):
+        raise NotImplementedError('Lazy')
+
+    @hybrid_property
+    def holdings(self):
+        raise NotImplementedError('Lazy')
 
 class Asset(Base):
     """
@@ -218,9 +226,6 @@ class Order(Base):
             res = func(res, split.ratio)
         return res
 
-    def validate(self, account):
-        raise NotImplementedError('Abstract method called')
-
 
 class SellOrder(Order):
     __tablename__ = 'pystock_sell_order'
@@ -240,8 +245,16 @@ class SellOrder(Order):
         func = lambda price, ratio: price * ratio
         return self.calculate_split(self._shares, func)
 
-    def validate(self, account):
-        raise NotImplementedError('Lazy')
+
+def validate_sell_order(mapper, connection, target):
+    if target.symbol not in target.account.holdings:
+        raise Exception('Transition fails validation: symbol {0} not in holdings'.format(target.symbol))
+    elif target.shares > target.account.holdings(target.symbol):
+        raise Exception('Transition fails validation: share {0} is not enough as {1}'.format(target.share, target.accont.holdings[target.symbol]))
+    elif target.account.commision > target.account.cash:
+        raise Exception('Transition fails validation: cash {0} is not enough for commission {1}'.format(target.account.cash, target.account.commision))
+
+event.listen(SellOrder, 'before_insert', validate_sell_order)
 
 
 class BuyOrder(Order):
@@ -262,10 +275,13 @@ class BuyOrder(Order):
         func = lambda price, ratio: price * ratio
         return self.calculate_split(self._shares, func)
 
-    def validate(self, account):
-        cost = self.shares * self.price + account.broker.commision(self)
-        if cost > account.cash:
-            raise Exception('Not Enough Money')
+
+def validate_buy_order(mapper, connection, target):
+    cost = target.shares * target.price + target.account.broker.commision(target)
+    if cost > target.account.cash:
+        raise Exception('Transition fails validation: cash {0} is smaller than cost {1}'.format(target.account.cash, cost))
+
+event.listen(BuyOrder, 'before_insert', validate_buy_order)
 
 
 class OrderStage(Base):

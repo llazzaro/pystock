@@ -80,7 +80,13 @@ class Account(Base):
     def execute(self, order, tick):
         pass
 
-    def total_value(self):
+    def deposit(self, cash):
+        if cash <= 0:
+            raise ValueError("Negative deposit not supported")
+        self.cash += cash
+
+    @hybrid_property
+    def total(self):
         return self.cash + sum(self.holdings)
 
 

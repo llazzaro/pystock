@@ -183,6 +183,9 @@ class Tick(Base):
     expiration = Column(String)
     register_number = Column(String, unique=True)
 
+    def __repr__(self):
+        return "<Tick('%s', '%s', '%s', '%s', '%s', '%s', '%s')>".format(self.symbol, self.time, self.open, self.high, self.low, self.close, self.volume)
+
 
 class Action(object):
     SELL = 'sell'
@@ -474,7 +477,7 @@ class MonetarySource(Base):
 
 class FXRates(Base):
     """
-        The price of a nation’s currency in terms of another currency.
+        The price of a nation's currency in terms of another currency.
         An exchange rate thus has two components, the domestic currency
         and a foreign currency, and can be quoted either directly or
         indirectly. In a direct quotation, the price of a unit of foreign
@@ -564,8 +567,8 @@ class Liability(Base):
 class Quote(Base):
     """
         This denotes the prevailing buy and sell prices for a particular financial instrument.
-        Quotes are displayed as: sell price – buy price.
-        For example, if 125.7 – 125.9 is the quote: 125.7 is the sell price and 125.9 is the buy price.
+        Quotes are displayed as: sell price -- buy price.
+        For example, if 125.7 -- 125.9 is the quote: 125.7 is the sell price and 125.9 is the buy price.
     """
 
     __tablename__ = 'pystock_quote'
@@ -578,6 +581,9 @@ class Quote(Base):
     open_price = Column(DECIMAL)
     unadj = Column(DECIMAL)
     volume = Column(DECIMAL)
+
+    def __repr__(self):
+                return "<Quote('%s', '%s','%s', '%s', '%s','%s', '%s', '%s')>" .format(self.symbol, self.time, self.open, self.high, self.low, self.close, self.volume, self.adjClose)
 
 
 class ExchangeQuote(Quote):

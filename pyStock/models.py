@@ -326,7 +326,7 @@ class SellShortOrder(Order):
     id = Column(Integer, ForeignKey('pystock_order.id'), primary_key=True)
 
     __mapper_args__ = {
-        'polymorphic_identity': 'pystock_buy_order',
+        'polymorphic_identity': 'pystock_sell_short_order',
     }
 
     def is_order_met(self, tick):
@@ -343,7 +343,7 @@ class BuyToCoverOrder(Order):
     id = Column(Integer, ForeignKey('pystock_order.id'), primary_key=True)
 
     __mapper_args__ = {
-        'polymorphic_identity': 'pystock_buy_order',
+        'polymorphic_identity': 'pystock_buy_to_cover_order',
     }
 
     def is_order_met(self, tick):
@@ -379,6 +379,10 @@ class OrderStage(Base):
 
 
 class OpenOrderStage(OrderStage):
+    """
+        An order to buy or sell a security that remains in effect until
+        it is either canceled by the customer, until it is executed or until it expires.
+    """
     __tablename__ = 'pystock_open_stage_order'
     id = Column(Integer, ForeignKey('pystock_stage_order.id'), primary_key=True)
 

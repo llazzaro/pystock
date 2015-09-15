@@ -1,5 +1,7 @@
 pyStock
 
+[![Coverage Status](https://coveralls.io/repos/llazzaro/pystock/badge.svg?branch=master&service=github)](https://coveralls.io/github/llazzaro/pystock?branch=master)
+
 Relational Diagram
 
 Functional Dependencies

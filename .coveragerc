@@ -1,0 +1,5 @@
+[run]
+source = pyStock
+
+[report]
+omit = tests

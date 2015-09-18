@@ -53,6 +53,6 @@ setup(
     tests_require=[
         'pytest',
     ],
-    test_suite="pyStock",
-    cmdclass={'test': PyTest},
+    test_suite="tests",
+
 )

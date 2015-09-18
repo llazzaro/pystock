@@ -1,11 +1,14 @@
 # -*- coding: utf-8 -*-
 import datetime
+from collections import Counter
 
 from sqlalchemy import event
 from sqlalchemy.sql.expression import ClauseElement
 from sqlalchemy import UniqueConstraint
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import relationship
+from sqlalchemy.orm import object_session
+
 from sqlalchemy import (
     Column,
     Integer,
@@ -13,10 +16,15 @@ from sqlalchemy import (
     ForeignKey,
     DateTime,
     DECIMAL,
-    Boolean
+    Boolean,
 )
 
 from pyStock import Base
+from pyStock.models.money import Money
+from pyStock.models.events import (
+    validate_buy_order,
+    validate_sell_order,
+)
 
 
 def get_or_create(session, model, defaults=None, **kwargs):
@@ -53,6 +61,9 @@ class Broker(Base):
     def __str__(self):
         return self.name or 'No Name'
 
+    def commission(self, target):
+        return 0
+
 
 class Account(Base):
     """
@@ -62,8 +73,8 @@ class Account(Base):
 
     id = Column(Integer, primary_key=True)
     broker_id = Column(Integer, ForeignKey('pystock_broker.id'))
-    broker = relationship("Broker", backref="accounts")
-    owner = relationship("Owner", backref="accounts")
+    broker = relationship('Broker', backref='accounts')
+    owner = relationship('Owner', backref='accounts')
     owner_id = Column(Integer, ForeignKey('pystock_owner.id'))
 
     def __str__(self):
@@ -71,23 +82,64 @@ class Account(Base):
 
     @hybrid_property
     def cash(self):
-        raise NotImplementedError('Lazy')
+        res = Counter()
+        for money in self.money:
+            res[money.currency] += money.amount
+
+        return res
 
     @hybrid_property
     def holdings(self):
-        raise NotImplementedError('Lazy')
+        res = Counter()
+        for position in self.positions:
+            if position.is_open:
+                symbol = position.buy_order.security.symbol
+                res[symbol] = position.buy_order.share
+
+        return res
+
+    @hybrid_property
+    def holdings_value(self):
+        """
+            all open positions with current market price
+        """
+        res = Counter()
+        for position in self.positions:
+            if position.is_open:
+                latest_quote = object_session(position).query(SecurityQuote).order_by('date desc').limit(1).first()
+                currency = position.buy_order.security.exchange.currency
+                res[currency] += latest_quote.close_price * position.buy_order.share
+
+        return res
+
+    @hybrid_property
+    def holdings_cost(self):
+        """
+            return how much money was used for current holdings
+        """
+        res = Counter()
+        for position in self.positions:
+            if position.is_open:
+                symbol = position.buy_order.security.symbol
+                res[symbol] += position.buy_order.price * position.buy_order.share
+
+        return res
 
     def execute(self, order, tick):
         pass
 
-    def deposit(self, cash):
-        if cash <= 0:
-            raise ValueError("Negative deposit not supported")
-        self.cash += cash
+    def deposit(self, money):
+        money.account = self
+
+    def withdraw(self, money):
+        self.deposit(Money(amount=-1 * money.amount, currency=money.currency))
 
     @hybrid_property
     def total(self):
-        return self.cash + sum(self.holdings)
+        """
+            total with holding current value
+        """
+        return self.cash + self.holdings_value
 
 
 class Asset(Base):
@@ -103,8 +155,13 @@ class Asset(Base):
 
 class Security(Base):
     """
+        A security is a financial instrument that represents an
+        ownership position in a publicly-traded corporation (stock),
+        a creditor relationship with governmental body or a
+        corporation (bond), or rights to ownership as represented by an option.
 
-        ISIN:  International Securities Identification Number (ISIN) uniquely identifies a security. Its structure is defined in ISO 6166.
+        ISIN:  International Securities Identification Number (ISIN)
+        uniquely identifies a security. Its structure is defined in ISO 6166.
     """
     __tablename__ = 'pystock_security'
 
@@ -115,7 +172,7 @@ class Security(Base):
     issuer_name = Column(String, nullable=True)
     ISIN = Column(String(12), nullable=False, unique=True)
     CFI = Column(String(6), nullable=True, unique=True)
-    exchange = relationship("Exchange", backref="securities")
+    exchange = relationship('Exchange', backref='securities')
     exchange_id = Column(Integer, ForeignKey('pystock_exchange.id'))
 
     __mapper_args__ = {
@@ -125,6 +182,10 @@ class Security(Base):
 
     def __str__(self):
         return self.symbol
+
+    @hybrid_property
+    def currency(self):
+        return self.exchange.currency
 
 
 class Stock(Security):
@@ -138,7 +199,7 @@ class Stock(Security):
     __tablename__ = 'pystock_stock'
 
     id = Column(Integer, ForeignKey('pystock_security.id'), primary_key=True)
-    company = relationship("Company", backref="stock")
+    company = relationship('Company', backref='stock')
     company_id = Column(Integer, ForeignKey('pystock_company.id'))
 
     __mapper_args__ = {
@@ -169,16 +230,16 @@ class Tick(Base):
 
     created_on = Column(DateTime, onupdate=datetime.datetime.now)
     broker_buyer_id = Column(Integer, ForeignKey('pystock_broker.id'))
-    broker_buyer = relationship("Broker", backref="buyer_trades", foreign_keys=[broker_buyer_id])
+    broker_buyer = relationship('Broker', backref='buyer_trades', foreign_keys=[broker_buyer_id])
     broker_seller_id = Column(Integer, ForeignKey('pystock_broker.id'))
-    broker_seller = relationship("Broker", backref="seller_trades", foreign_keys=[broker_seller_id])
+    broker_seller = relationship('Broker', backref='seller_trades', foreign_keys=[broker_seller_id])
     price = Column(DECIMAL)
     amount = Column(DECIMAL)
     volume = Column(Integer)
     nominal_amount = Column(Integer)
     trade_date = Column(DateTime)
     security_id = Column(Integer, ForeignKey('pystock_security.id'))
-    security = relationship("Security", backref="trades")
+    security = relationship('Security', backref='trades')
     fraction = Column(Boolean)
     expiration = Column(String)
     register_number = Column(String, unique=True)
@@ -217,13 +278,13 @@ class Order(Base):
     }
 
     account_id = Column(Integer, ForeignKey('pystock_account.id'))
-    account = relationship("Account", backref="orders")
+    account = relationship('Account', backref='orders')
     security_id = Column(Integer, ForeignKey('pystock_security.id'))
-    security = relationship("Security", backref="order")
+    security = relationship('Security', backref='order')
     order_id = Column(String, unique=True)
-    _price = Column(DECIMAL)
-    _shares = Column(Integer)
-    stage = relationship("OrderStage", backref="orders")
+    price = Column(DECIMAL)
+    share = Column(Integer)
+    stage = relationship('OrderStage', backref='orders')
     stage_id = Column(Integer, ForeignKey('pystock_stage_order.id'))
 
     def __str__(self):
@@ -244,6 +305,12 @@ class Order(Base):
     def is_order_met(self):
         raise NotImplementedError('Abstrat method called')
 
+    def current_stage(self):
+        raise NotImplementedError('Abstrat method called')
+
+    def update_stage(self, stage):
+        raise NotImplementedError('Abstrat method called')
+
 
 class SellOrder(Order):
     __tablename__ = 'pystock_sell_order'
@@ -254,12 +321,12 @@ class SellOrder(Order):
     }
 
     @hybrid_property
-    def price(self):
+    def current_price(self):
         func = lambda price, ratio: price / ratio
         return self.calculate_split(self._price, func)
 
     @hybrid_property
-    def shares(self):
+    def current_shares(self):
         func = lambda price, ratio: price * ratio
         return self.calculate_split(self._shares, func)
 
@@ -271,21 +338,6 @@ class SellOrder(Order):
         return False
 
 
-def validate_sell_order(mapper, connection, target):
-    if target.symbol not in target.account.holdings:
-        raise Exception('Transition fails validation: symbol {0} not in holdings'.format(target.symbol))
-    elif target.shares > target.account.holdings(target.symbol):
-        raise Exception('Transition fails validation: share {0} is not enough as {1}'.format(target.share, target.accont.holdings[target.symbol]))
-    elif target.account.commision > target.account.cash:
-        raise Exception('Transition fails validation: cash {0} is not enough for commission {1}'.format(target.account.cash, target.account.commision))
-
-        close_price = None
-        if target.type == 'STOP' and target.price > close_price:
-            raise Exception("Sell stop order price %s shouldn't be higher than market price %s" % (target.price, close_price))
-
-event.listen(SellOrder, 'before_insert', validate_sell_order)
-
-
 class BuyOrder(Order):
     __tablename__ = 'pystock_buy_order'
     id = Column(Integer, ForeignKey('pystock_order.id'), primary_key=True)
@@ -295,12 +347,12 @@ class BuyOrder(Order):
     }
 
     @hybrid_property
-    def price(self):
+    def current_price(self):
         func = lambda price, ratio: price / ratio
         return self.calculate_split(self._price, func)
 
     @hybrid_property
-    def shares(self):
+    def current_shares(self):
         func = lambda price, ratio: price * ratio
         return self.calculate_split(self._shares, func)
 
@@ -310,14 +362,6 @@ class BuyOrder(Order):
         elif Type.LIMIT == self.type and float(tick.low) <= float(self.price):
             return True
         return False
-
-
-def validate_buy_order(mapper, connection, target):
-    cost = target.shares * target.price + target.account.broker.commision(target)
-    if cost > target.account.cash:
-        raise Exception('Transition fails validation: cash {0} is smaller than cost {1}'.format(target.account.cash, cost))
-
-event.listen(BuyOrder, 'before_insert', validate_buy_order)
 
 
 class SellShortOrder(Order):
@@ -366,7 +410,7 @@ class OrderStage(Base):
 
     stage_type = Column(String(50))
     executed_on = Column(DateTime, onupdate=datetime.datetime.now)
-    next_stage = relationship("OrderStage", remote_side=[id])
+    next_stage = relationship('OrderStage', remote_side=[id])
     next_stage_id = Column(Integer, ForeignKey('pystock_stage_order.id'))
 
     __mapper_args__ = {
@@ -378,6 +422,19 @@ class OrderStage(Base):
         return '{0} {1}'.format(self.stage_type, self.executed_on)
 
 
+class PlacedOrderStage(OrderStage):
+    """
+
+    """
+    __tablename__ = 'pystock_placed_stage_order'
+    id = Column(Integer, ForeignKey('pystock_stage_order.id'), primary_key=True)
+
+    excluded_form_columns = ('stage_type',)
+    __mapper_args__ = {
+        'polymorphic_identity': 'pystock_placed_order_stage',
+    }
+
+
 class OpenOrderStage(OrderStage):
     """
         An order to buy or sell a security that remains in effect until
@@ -386,13 +443,15 @@ class OpenOrderStage(OrderStage):
     __tablename__ = 'pystock_open_stage_order'
     id = Column(Integer, ForeignKey('pystock_stage_order.id'), primary_key=True)
 
-    excluded_form_columns = ('order_type',)
     __mapper_args__ = {
         'polymorphic_identity': 'pystock_stage_open_order',
     }
 
 
 class CancelOrderStage(OrderStage):
+    """
+
+    """
     __tablename__ = 'pystock_cancel_stage_order'
     id = Column(Integer, ForeignKey('pystock_stage_order.id'), primary_key=True)
 
@@ -423,7 +482,7 @@ class Split(Base):
     split_date = Column(DateTime)
     ratio = Column(Integer)
     security_id = Column(Integer, ForeignKey('pystock_security.id'))
-    security = relationship("Security", backref="splits")
+    security = relationship('Security', backref='splits')
 
 
 class Dividend(Base):
@@ -442,7 +501,7 @@ class Dividend(Base):
     payment_date = Column(DateTime)
     amount = Column(DECIMAL)
     security_id = Column(Integer, ForeignKey('pystock_security.id'))
-    security = relationship("Security", backref="dividends")
+    security = relationship('Security', backref='dividends')
 
 
 class ADR(Base):
@@ -452,25 +511,11 @@ class ADR(Base):
     id = Column(Integer, primary_key=True)
     ratio = Column(Integer)
     adr_security_id = Column(Integer, ForeignKey('pystock_security.id'))
-    adr_security = relationship("Stock", backref="ADROrigin", foreign_keys='ADR.adr_security_id')
+    adr_security = relationship('Stock', backref='ADROrigin', foreign_keys='ADR.adr_security_id')
     security_id = Column(Integer, ForeignKey('pystock_security.id'))
-    security = relationship('Stock', backref="ADRDestination", foreign_keys='ADR.security_id')
+    security = relationship('Stock', backref='ADRDestination', foreign_keys='ADR.security_id')
     exchange_id = Column(Integer, ForeignKey('pystock_exchange.id'))
-    exchange = relationship("Exchange", backref="ADR")
-
-
-class Currency(Base):
-    """
-        A generally accepted form of money, including coins and paper notes,
-        which is issued by a government and circulated within an economy.
-        Used as a medium of exchange for goods and services, currency is the basis for trade.
-
-        code uses ISO 4217 Currency Code
-    """
-    __tablename__ = 'pystock_currency'
-    id = Column(Integer, primary_key=True)
-    code = Column(String, unique=True)
-    name = Column(String)
+    exchange = relationship('Exchange', backref='ADR')
 
 
 class MonetarySource(Base):
@@ -497,12 +542,12 @@ class FXRates(Base):
     )
 
     id = Column(Integer, primary_key=True)
-    monetary_source = relationship("MonetarySource", backref="fxrates")
+    monetary_source = relationship('MonetarySource', backref='fxrates')
     monetary_source_id = Column(Integer, ForeignKey('pystock_monetary_source.id'))
     from_currency_id = Column(Integer, ForeignKey('pystock_currency.id'))
-    from_currency = relationship("Currency", backref="from_fxrates", foreign_keys=[from_currency_id])
+    from_currency = relationship('Currency', backref='from_fxrates', foreign_keys=[from_currency_id])
     to_curreny_id = Column(Integer, ForeignKey('pystock_currency.id'))
-    to_currency = relationship("Currency", backref="to_fxrates", foreign_keys=[to_curreny_id])
+    to_currency = relationship('Currency', backref='to_fxrates', foreign_keys=[to_curreny_id])
     buy_rate = Column(DECIMAL)
     sell_rate = Column(DECIMAL)
     created_on = Column(DateTime, onupdate=datetime.datetime.now)
@@ -529,7 +574,7 @@ class Book(Base):
     id = Column(Integer, primary_key=True)
 
     name = Column(String)
-    owner = relationship("Owner", backref="trades")
+    owner = relationship('Owner', backref='trades')
     owner_id = Column(Integer, ForeignKey('pystock_owner.id'))
 
 
@@ -554,6 +599,8 @@ class Exchange(Base):
 
     code = Column(String)
     name = Column(String)
+    currency = relationship('Currency', backref='exchanges')
+    currency_id = Column(Integer, ForeignKey('pystock_currency.id'))
 
     def __str__(self):
         return 'Exchange {0} {1}'.format(self.code, self.name)
@@ -587,7 +634,7 @@ class Quote(Base):
     volume = Column(DECIMAL)
 
     def __repr__(self):
-                return "<Quote('%s', '%s','%s', '%s', '%s','%s', '%s', '%s')>" .format(self.symbol, self.time, self.open, self.high, self.low, self.close, self.volume, self.adjClose)
+        raise NotImplementedError
 
 
 class ExchangeQuote(Quote):
@@ -596,7 +643,7 @@ class ExchangeQuote(Quote):
     __tablename__ = 'pystock_exchange_quote'
     id = Column(Integer, ForeignKey('pystock_quote.id'), primary_key=True)
     exchange_id = Column(Integer, ForeignKey('pystock_exchange.id'))
-    exchange = relationship("Exchange", backref="quotes")
+    exchange = relationship('Exchange', backref='quotes')
 
     __mapper_args__ = {
         'polymorphic_identity': 'pystock_exchange_quote',
@@ -610,23 +657,100 @@ class SecurityQuote(Quote):
 
     id = Column(Integer, ForeignKey('pystock_quote.id'), primary_key=True)
     security_id = Column(Integer, ForeignKey('pystock_security.id'))
-    security = relationship("Security", backref="quotes")
+    security = relationship('Security', backref='quotes', order_by='SecurityQuote.date')
 
     __mapper_args__ = {
         'polymorphic_identity': 'pystock_security_quote',
     }
 
+    def __repr__(self):
+        return "<Quote('%s', '%s','%s', '%s', '%s','%s', '%s', '%s')>" .format(self.security.symbol, self.date, self.open_price, self.high_price, self.low_price, self.close_price, self.volume, self.unadj)
 
-class OrderTracking(Base):
+
+class PositionStage(Base):
     """
-        This is used to relate an open buy with the sell.
-        It's useful for tracking earnings
     """
-    __tablename__ = 'pystock_order_tracking'
+    __tablename__ = 'pystock_position_stage'
 
     id = Column(Integer, primary_key=True)
-    shares = Column(Integer, nullable=False)
-    buy_order = relationship("BuyOrder", backref="tracking")
+
+    stage_type = Column(String(50))
+    executed_on = Column(DateTime, onupdate=datetime.datetime.now)
+    next_stage = relationship('PositionStage', remote_side=[id])
+    next_stage_id = Column(Integer, ForeignKey('pystock_position_stage.id'))
+
+    __mapper_args__ = {
+        'polymorphic_identity': 'pystock_position_stage',
+        'polymorphic_on': stage_type
+    }
+
+    def __str__(self):
+        return '{0} {1}'.format(self.stage_type, self.executed_on)
+
+
+class OpenPositionStage(PositionStage):
+    """
+    """
+    __tablename__ = 'pystock_open_position_stage'
+    id = Column(Integer, ForeignKey('pystock_position_stage.id'), primary_key=True)
+
+    __mapper_args__ = {
+        'polymorphic_identity': 'pystock_open_postion_stage',
+    }
+
+    def is_open(self):
+        return True
+
+
+class ClosePositionStage(PositionStage):
+    """
+    """
+    __tablename__ = 'pystock_close_position_stage'
+    id = Column(Integer, ForeignKey('pystock_position_stage.id'), primary_key=True)
+
+    __mapper_args__ = {
+        'polymorphic_identity': 'pystock_close_postion_stage',
+    }
+
+    def is_open(self):
+        return False
+
+
+class Position(Base):
+    """
+        Close Position: Executing a security transaction that is the exact opposite of an open position,
+        thereby nullifying it and eliminating the initial exposure.
+        Closing a long position in a security would entail selling it,
+        while closing a short position in a security would involve buying it back.
+    """
+    __tablename__ = 'pystock_position'
+
+    id = Column(Integer, primary_key=True)
+    share = Column(Integer, nullable=False)
+    buy_order = relationship('BuyOrder', backref='tracking')
     buy_order_id = Column(Integer, ForeignKey('pystock_buy_order.id'))
-    sell_order = relationship("SellOrder", backref="tracking")
+    sell_order = relationship('SellOrder', backref='tracking')
     sell_order_id = Column(Integer, ForeignKey('pystock_sell_order.id'))
+    stage = relationship('PositionStage', backref='positions')
+    first_id = Column(Integer, ForeignKey('pystock_position_stage.id'))
+    account_id = Column(Integer, ForeignKey('pystock_account.id'))
+    account = relationship('Account', backref='positions')
+
+    @hybrid_property
+    def is_open(self):
+        return self.current_stage.is_open
+
+    @hybrid_property
+    def current_stage(self):
+        current_stage = self.stage
+        while current_stage.next_stage is not None:
+            current_stage = current_stage.next_stage
+
+        return current_stage
+
+    def close(self, share):
+        raise NotImplementedError('Lazy')
+
+
+event.listen(BuyOrder, 'before_insert', validate_buy_order)
+event.listen(SellOrder, 'before_insert', validate_sell_order)

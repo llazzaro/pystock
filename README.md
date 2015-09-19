@@ -17,7 +17,7 @@ To get started check
 
 Two options are available:
 
-* Clone the repo: `git clone https://github.com/twbs/bootstrap.git`.
+* Clone the repo: `git clone https://github.com/llazzaro/pystock.git`.
 * Install with pip: pip install pyStock
 
 ## Bugs and feature requests

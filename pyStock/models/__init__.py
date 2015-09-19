@@ -94,7 +94,7 @@ class Account(Base):
         for position in self.positions:
             if position.is_open:
                 symbol = position.buy_order.security.symbol
-                res[symbol] = position.buy_order.share
+                res[symbol] += position.share
 
         return res
 
@@ -740,9 +740,21 @@ class Position(Base):
 
         return current_stage
 
-    def close(self, share):
-        raise NotImplementedError('Lazy')
-
+    def close(self, sell_order, commit=True):
+        session = object_session(sell_order)
+        self.sell_order = sell_order
+        if sell_order.share > self.share:
+            raise Exception('Cant close with more share')
+        close_stage = ClosePositionStage()
+        self.current_stage.next_stage = close_stage
+        session.add(close_stage)
+        if sell_order.share != self.share:
+            # we open a new position with the remaining
+            # the old one is closed with the sell_order share
+            position = self.__class__(stage=OpenPositionStage(), share=self.share - sell_order.share, buy_order=self.buy_order, account=self.account)
+            session.add(position)
+        if commit:
+            session.commit()
 
 event.listen(BuyOrder, 'before_insert', validate_buy_order)
 event.listen(SellOrder, 'before_insert', validate_sell_order)

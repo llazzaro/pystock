@@ -21,7 +21,7 @@ def validate_sell_order(mapper, connection, target):
     if target.security.symbol not in target.account.holdings.keys():
         raise Exception('Transition fails validation: symbol {0} not in holdings'.format(target.security.symbol))
     elif target.share > target.account.holdings[target.security.symbol]:
-        raise Exception('Transition fails validation: share {0} is not enough as {1}'.format(target.share, target.accont.holdings[target.security.symbol]))
+        raise Exception('Transition fails validation: share {0} is not enough as {1}'.format(target.share, target.account.holdings[target.security.symbol]))
     elif target.account.broker.commission(target) > target.account.cash[currency]:
         raise Exception('Transition fails validation: cash {0} is not enough for commission {1}'.format(target.account.cash, target.account.broker.commision(target)))
 

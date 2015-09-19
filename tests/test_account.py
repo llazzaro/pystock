@@ -207,19 +207,83 @@ class TestStringOutputs(DatabaseTest):
 
 class TestPosition(DatabaseTest):
 
-    def test_current_position_stage_is_open(self):
+    def _buy_stock(self):
         pesos = Currency(name='Pesos', code='ARG')
         broker = Broker(name='Cheap')
-        account = Account(broker=broker)
-        account.deposit(Money(amount=Decimal(10000), currency=pesos))
+        self.account = Account(broker=broker)
+        self.account.deposit(Money(amount=Decimal(10000), currency=pesos))
         exchange = Exchange(name='Merval', currency=pesos)
-        security = Stock(symbol='PBR', description='Petrobras BR', ISIN='US71654V4086', exchange=exchange)
+        self.security = Stock(symbol='PBR', description='Petrobras BR', ISIN='US71654V4086', exchange=exchange)
         filled_stage = FillOrderStage(executed_on=datetime.datetime.now())
         price = Decimal(10)
         share = 10
-        order = BuyOrder(account=account, security=security, stage=filled_stage, price=price, share=share)
+        order = BuyOrder(account=self.account, security=self.security, stage=filled_stage, price=price, share=share)
 
         self.session.add(order)
         self.session.commit()
+        return self.account
 
-        self.assertTrue(account.positions[0].current_stage.is_open())
+    def test_current_position_stage_is_open(self):
+        account = self._buy_stock()
+        position = account.positions[0]
+        self.assertTrue(position.current_stage.is_open())
+
+    def test_close_position_ok_path(self):
+        self._buy_stock()
+
+        tomorrow = datetime.datetime.now() + datetime.timedelta(days=1)
+        quote = SecurityQuote(date=tomorrow, close_price=Decimal(100), open_price=10.1, high_price=14, low_price=10.1, volume=10000, security=self.security)
+        self.session.add(quote)
+        self.session.commit()
+
+        filled_stage = FillOrderStage(executed_on=datetime.datetime.now())
+        sell_order = SellOrder(account=self.account, security=self.security, stage=filled_stage, price=Decimal(100), share=10)
+
+        self.session.add(sell_order)
+        self.session.commit()
+
+        self.account.positions[0].close(sell_order)
+
+        self.assertFalse(self.account.positions[0].is_open())
+
+    def test_close_position_less_than_bought_opens_a_new_position(self):
+        self._buy_stock()
+
+        tomorrow = datetime.datetime.now() + datetime.timedelta(days=1)
+        quote = SecurityQuote(date=tomorrow, close_price=Decimal(100), open_price=10.1, high_price=14, low_price=10.1, volume=10000, security=self.security)
+        self.session.add(quote)
+        self.session.commit()
+
+        filled_stage = FillOrderStage(executed_on=datetime.datetime.now())
+        sell_order = SellOrder(account=self.account, security=self.security, stage=filled_stage, price=Decimal(100), share=5)
+
+        self.session.add(sell_order)
+        self.session.commit()
+
+        self.account.positions[0].close(sell_order)
+
+        self.assertEquals(len(self.account.positions), 2)
+        self.assertFalse(self.account.positions[0].is_open())
+        self.assertTrue(self.account.positions[1].is_open())
+
+    def test_close_position_with_more_share_raises_execption(self):
+        self._buy_stock()
+        # buy more to allow to sell 15
+        filled_stage = FillOrderStage(executed_on=datetime.datetime.now())
+        buy_order = BuyOrder(account=self.account, security=self.security, stage=filled_stage, price=Decimal(20), share=10)
+        self.session.add(buy_order)
+        self.session.commit()
+
+        tomorrow = datetime.datetime.now() + datetime.timedelta(days=1)
+        quote = SecurityQuote(date=tomorrow, close_price=Decimal(100), open_price=10.1, high_price=14, low_price=10.1, volume=10000, security=self.security)
+        self.session.add(quote)
+        self.session.commit()
+
+        filled_stage = FillOrderStage(executed_on=datetime.datetime.now())
+        sell_order = SellOrder(account=self.account, security=self.security, stage=filled_stage, price=Decimal(100), share=15)
+
+        self.session.add(sell_order)
+        self.session.commit()
+
+        with self.assertRaises(Exception):
+            self.account.positions[0].close(sell_order)

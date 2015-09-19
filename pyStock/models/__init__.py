@@ -245,7 +245,7 @@ class Tick(Base):
     register_number = Column(String, unique=True)
 
     def __repr__(self):
-        return "<Tick('%s', '%s', '%s', '%s', '%s', '%s', '%s')>".format(self.symbol, self.time, self.open, self.high, self.low, self.close, self.volume)
+        return "<Tick('{0}', '{1}', '{2}', '{3}')>".format(self.security.symbol, self.trade_date, self.price, self.volume)
 
 
 class Action(object):
@@ -253,10 +253,7 @@ class Action(object):
     BUY = 'buy'
     SELL_SHORT = 'sell_short'
     BUY_TO_COVER = 'buy_to_cover'
-
-
-class Type(object):
-    pass
+    STOP = 'stop'
 
 
 class Order(Base):
@@ -286,6 +283,7 @@ class Order(Base):
     share = Column(Integer)
     stage = relationship('OrderStage', backref='orders')
     stage_id = Column(Integer, ForeignKey('pystock_stage_order.id'))
+    action = Column(String, unique=True)
 
     def __str__(self):
         return '{0} Total {1}'.format(self.order_type, self.share * self.price)
@@ -331,9 +329,9 @@ class SellOrder(Order):
         return self.calculate_split(self._shares, func)
 
     def is_order_met(self, tick):
-        if Type.MARKET == self.type:
+        if Action.MARKET == self.action:
             return True
-        elif Type.STOP == self.type and float(tick.low) <= float(self.price):
+        elif Action.STOP == self.action and float(tick.low_price) <= float(self.price):
             return True
         return False
 
@@ -357,9 +355,9 @@ class BuyOrder(Order):
         return self.calculate_split(self._shares, func)
 
     def is_order_met(self, tick):
-        if Type.MARKET == self.type:
+        if Action.MARKET == self.action:
             return True
-        elif Type.LIMIT == self.type and float(tick.low) <= float(self.price):
+        elif Action.LIMIT == self.action and float(tick.low) <= float(self.price):
             return True
         return False
 
@@ -374,9 +372,9 @@ class SellShortOrder(Order):
     }
 
     def is_order_met(self, tick):
-        if Type.MARKET == self.type:
+        if Action.MARKET == self.type:
             return True
-        elif Type.LIMIT == self.type and float(tick.high) >= float(self.price):
+        elif Action.LIMIT == self.type and float(tick.high) >= float(self.price):
             return True
         return False
 
@@ -391,17 +389,11 @@ class BuyToCoverOrder(Order):
     }
 
     def is_order_met(self, tick):
-        if Type.MARKET == self.type:
+        if Action.MARKET == self.type:
             return True
-        elif Type.STOP == self.type and float(tick.high) >= float(self.price):
+        elif Action.STOP == self.type and float(tick.high) >= float(self.price):
             return True
         return False
-
-
-def validate_buy_to_cover(mapper, connection, target):
-    close_price = None
-    if Type.STOP == target.type and target.price < close_price:
-        raise Exception("Buy to cover stop target price %s shouldn't be higher than market price %s" % (target.price, close_price))
 
 
 class OrderStage(Base):

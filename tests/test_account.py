@@ -10,6 +10,9 @@ from pyStock.models import (
     Owner,
     Broker,
     Exchange,
+    Security,
+    Tick,
+    Company,
 )
 from pyStock.models.money import (
     Money,
@@ -143,6 +146,14 @@ class TestAccount(DatabaseTest):
             self.session.add(order)
             self.session.commit()
 
+    def test_sell_validate_selling_more_than_owned(self):
+        self._buy_stock(self.stock_one)
+        # can't sell because don't have the stock
+        with self.assertRaises(Exception):
+            order = SellOrder(account=self.account, security=self.stock_two, price=200, share=9)
+            self.session.add(order)
+            self.session.commit()
+
     def test_sell_something_owned_ok_path(self):
         self._buy_stock(self.stock_one)
 
@@ -155,3 +166,60 @@ class TestAccount(DatabaseTest):
 
         self.session.add(order)
         self.session.commit()
+
+
+class TestStringOutputs(DatabaseTest):
+
+    def test_broker_str(self):
+        broker = Broker(name='test')
+
+        self.assertEquals('test', str(broker))
+
+    def test_security_str(self):
+        security = Security(symbol='YPF')
+
+        self.assertEquals('YPF', str(security))
+
+    def test_company_str(self):
+        company = Company(name='Lalal S.A.')
+
+        self.assertEquals('Company Lalal S.A.', str(company))
+
+    def test_tick_str(self):
+        import datetime
+        now = datetime.datetime.now()
+        security = Security(symbol='YPF')
+        tick = Tick(security=security, trade_date=now, price=Decimal(10), volume=100)
+
+        self.assertEquals("<Tick('YPF', '{0}', '10', '100')>".format(now), str(tick))
+
+    def test_order_str(self):
+        security = Security(symbol='YPF')
+        order = BuyOrder(security=security, share=10, price=Decimal(10))
+
+        self.assertEquals('pystock_buy_order Total 100', str(order))
+
+    def test_exchange_str(self):
+        exchange = Exchange(name='Merval', code='MERV')
+
+        self.assertEquals('Exchange MERV Merval', str(exchange))
+
+
+class TestPosition(DatabaseTest):
+
+    def test_current_position_stage_is_open(self):
+        pesos = Currency(name='Pesos', code='ARG')
+        broker = Broker(name='Cheap')
+        account = Account(broker=broker)
+        account.deposit(Money(amount=Decimal(10000), currency=pesos))
+        exchange = Exchange(name='Merval', currency=pesos)
+        security = Stock(symbol='PBR', description='Petrobras BR', ISIN='US71654V4086', exchange=exchange)
+        filled_stage = FillOrderStage(executed_on=datetime.datetime.now())
+        price = Decimal(10)
+        share = 10
+        order = BuyOrder(account=account, security=security, stage=filled_stage, price=price, share=share)
+
+        self.session.add(order)
+        self.session.commit()
+
+        self.assertTrue(account.positions[0].current_stage.is_open())

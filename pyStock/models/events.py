@@ -16,6 +16,7 @@ def validate_buy_order(mapper, connection, target):
 
 
 def validate_sell_order(mapper, connection, target):
+    from pyStock.models import SecurityQuote, Action
     currency = target.security.exchange.currency
     if target.security.symbol not in target.account.holdings.keys():
         raise Exception('Transition fails validation: symbol {0} not in holdings'.format(target.security.symbol))
@@ -24,6 +25,17 @@ def validate_sell_order(mapper, connection, target):
     elif target.account.broker.commission(target) > target.account.cash[currency]:
         raise Exception('Transition fails validation: cash {0} is not enough for commission {1}'.format(target.account.cash, target.account.broker.commision(target)))
 
-        close_price = None
-        if target.type == 'STOP' and target.price > close_price:
-            raise Exception("Sell stop order price %s shouldn't be higher than market price %s" % (target.price, close_price))
+    latest_quote = object_session(target).query(SecurityQuote).order_by('date desc').limit(1).first()
+    close_price = latest_quote.close_price
+    if target.action == Action.STOP and target.price > close_price:
+        raise Exception("Sell stop order price %s shouldn't be higher than market price %s" % (target.price, close_price))
+
+
+def validate_buy_to_cover(mapper, connection, target):
+    from pyStock.models import SecurityQuote, Action
+    latest_quote = object_session(target).query(SecurityQuote).order_by('date desc').limit(1).first()
+    close_price = latest_quote.close_price
+    if Action.STOP == target.type and target.price < close_price:
+        raise Exception("Buy to cover stop target price %s shouldn't be higher than market price %s" % (target.price, close_price))
+
+

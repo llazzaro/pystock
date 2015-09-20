@@ -1,3 +1,4 @@
+from __future__ import division
 from decimal import Decimal
 
 from pyStock.models import (
@@ -150,7 +151,52 @@ class TestMoney(DatabaseTest):
 
     def test_mul(self):
         currency_usd, created = get_or_create(self.session, Currency, name='Dollar', code='USD')
-
         usd_10, created = get_or_create(self.session, Money, amount=Decimal(10), currency=currency_usd)
 
         self.assertEquals(usd_10 * 20, Money(amount=Decimal(10 * 20), currency=currency_usd))
+
+    def test_mul_bad(self):
+        currency_usd, created = get_or_create(self.session, Currency, name='Dollar', code='USD')
+        usd_10, created = get_or_create(self.session, Money, amount=Decimal(10), currency=currency_usd)
+
+        with self.assertRaises(Exception):
+            usd_10 * usd_10
+
+    def test_sum(self):
+        currency_usd, created = get_or_create(self.session, Currency, name='Dollar', code='USD')
+        money = sum([Money(amount=1, currency=currency_usd), Money(amount=2, currency=currency_usd)])
+        self.assertEquals(money, Money(amount=3, currency=currency_usd))
+
+    def test_add_non_money(self):
+        with self.assertRaises(Exception):
+            Money(1000) + 123
+
+    def test_div(self):
+        currency_usd, created = get_or_create(self.session, Currency, name='Dollar', code='USD')
+        x = Money(amount=50, currency=currency_usd)
+        y = Money(amount=2, currency=currency_usd)
+        self.assertEquals(x / y, Decimal(25))
+
+    def test_div_by_non_Money(self):
+        currency_usd, created = get_or_create(self.session, Currency, name='Dollar', code='USD')
+        x = Money(amount=50, currency=currency_usd)
+        y = 2
+        self.assertEquals(x / y, Money(amount=25, currency=currency_usd))
+
+    def test_rmod_bad(self):
+        currency_usd, created = get_or_create(self.session, Currency, name='Dollar', code='USD')
+        x = Money(amount=2, currency=currency_usd)
+        with self.assertRaises(Exception):
+            self.assertEquals(x, 1)
+
+    def test_lt(self):
+        currency_usd, created = get_or_create(self.session, Currency, name='Dollar', code='USD')
+        x = Money(amount=1, currency=currency_usd)
+        y = Money(amount=2, currency=currency_usd)
+        self.assertTrue(x < y)
+
+    def test_lgt(self):
+        currency_usd, created = get_or_create(self.session, Currency, name='Dollar', code='USD')
+        x = Money(amount=2, currency=currency_usd)
+        y = Money(amount=1, currency=currency_usd)
+        self.assertTrue(x > y)

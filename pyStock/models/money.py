@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
+from __future__ import division
 import sys
 from decimal import Decimal, ROUND_DOWN
+
 
 PYTHON2 = sys.version_info[0] == 2
 

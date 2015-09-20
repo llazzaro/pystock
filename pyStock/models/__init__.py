@@ -78,7 +78,7 @@ class Account(Base):
     owner_id = Column(Integer, ForeignKey('pystock_owner.id'))
 
     def __str__(self):
-        return 'Account for {0} broker {1}'.format(self.owner.user[0].email, self.broker.name)
+        return 'Account for {0} broker {1}'.format(self.owner.name, self.broker.name)
 
     @hybrid_property
     def cash(self):
@@ -656,7 +656,7 @@ class SecurityQuote(Quote):
     }
 
     def __repr__(self):
-        return "<Quote('%s', '%s','%s', '%s', '%s','%s', '%s', '%s')>" .format(self.security.symbol, self.date, self.open_price, self.high_price, self.low_price, self.close_price, self.volume, self.unadj)
+        return "<Quote('{0}', '{1}','{2}', '{3}', '{4}', '{5}', '{6}', '{7}')>" .format(self.security.symbol, self.date, self.open_price, self.high_price, self.low_price, self.close_price, self.volume, self.unadj)
 
 
 class PositionStage(Base):
@@ -687,7 +687,7 @@ class OpenPositionStage(PositionStage):
     id = Column(Integer, ForeignKey('pystock_position_stage.id'), primary_key=True)
 
     __mapper_args__ = {
-        'polymorphic_identity': 'pystock_open_postion_stage',
+        'polymorphic_identity': 'pystock_open_position_stage',
     }
 
     def is_open(self):
@@ -701,7 +701,7 @@ class ClosePositionStage(PositionStage):
     id = Column(Integer, ForeignKey('pystock_position_stage.id'), primary_key=True)
 
     __mapper_args__ = {
-        'polymorphic_identity': 'pystock_close_postion_stage',
+        'polymorphic_identity': 'pystock_close_position_stage',
     }
 
     def is_open(self):

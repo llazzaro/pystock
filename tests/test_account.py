@@ -13,6 +13,8 @@ from pyStock.models import (
     Security,
     Tick,
     Company,
+    OpenOrderStage,
+    OpenPositionStage,
 )
 from pyStock.models.money import (
     Money,
@@ -170,6 +172,39 @@ class TestAccount(DatabaseTest):
 
 
 class TestStringOutputs(DatabaseTest):
+
+    def test_account_ste(self):
+        owner = Owner(name='Owner name')
+        broker = Broker(name='Broker1')
+        account = Account(owner=owner, broker=broker)
+
+        self.assertEquals('Account for Owner name broker Broker1', str(account))
+
+    def test_order_stage_str(self):
+        order_stage = OpenOrderStage()
+
+        self.session.add(order_stage)
+        self.session.commit()
+
+        self.assertEquals('pystock_stage_open_order {0}'.format(order_stage.executed_on), str(order_stage))
+
+    def test_security_quote(self):
+        tomorrow = datetime.datetime.now() + datetime.timedelta(days=1)
+        exchange = Exchange(name='Merval', code='MERV')
+        security = Stock(symbol='PBR', description='Petrobras BR', ISIN='US71654V4086', exchange=exchange)
+        quote = SecurityQuote(date=tomorrow, close_price=Decimal(100), open_price=10.1, high_price=14, low_price=10.1, volume=10000, security=security)
+        self.session.add(quote)
+        self.session.commit()
+
+        self.assertEquals("<Quote('PBR', '{0}','10.1000000000', '14.0000000000', '10.1000000000', '100.0000000000', '10000.0000000000', 'None')>".format(quote.date), str(quote))
+
+    def test_position_stage_str(self):
+        order_stage = OpenPositionStage()
+
+        self.session.add(order_stage)
+        self.session.commit()
+
+        self.assertEquals('pystock_open_position_stage {0}'.format(order_stage.executed_on), str(order_stage))
 
     def test_broker_str(self):
         broker = Broker(name='test')

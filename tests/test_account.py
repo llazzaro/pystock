@@ -140,6 +140,7 @@ class TestAccount(DatabaseTest):
             self.session.commit()
 
     def test_sell_validate_selling_something_owned_but_quantity_invalid(self):
+        self._buy_stock(self.stock_one)
         # can't sell because don't have the enough share
         with self.assertRaises(Exception):
             order = SellOrder(account=self.account, security=self.stock_one, price=100, share=9000)

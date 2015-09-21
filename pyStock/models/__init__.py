@@ -267,6 +267,8 @@ class Order(Base):
 
     __tablename__ = 'pystock_order'
     id = Column(Integer, primary_key=True)
+
+    # order type is used by sqlalchemy to track class inheritance
     order_type = Column(String(50))
 
     __mapper_args__ = {
@@ -284,6 +286,9 @@ class Order(Base):
     stage = relationship('OrderStage', backref='orders')
     stage_id = Column(Integer, ForeignKey('pystock_stage_order.id'))
     action = Column(String, unique=True)
+    is_market = Column(Boolean)
+    is_limit = Column(Boolean)
+    is_stop = Column(Boolean)
 
     def __str__(self):
         return '{0} Total {1}'.format(self.order_type, self.share * self.price)

@@ -305,7 +305,7 @@ class Order(Base):
             res = func(res, split.ratio)
         return res
 
-    def is_order_met(self):
+    def is_order_met(self, tick):
         raise NotImplementedError('Abstrat method called')
 
     def current_stage(self):
@@ -313,6 +313,9 @@ class Order(Base):
 
     def update_stage(self, stage):
         raise NotImplementedError('Abstrat method called')
+
+    def cancel(self):
+        raise NotImplementedError('Abstract method called')
 
 
 class SellOrder(Order):
@@ -334,7 +337,7 @@ class SellOrder(Order):
         return self.calculate_split(self._shares, func)
 
     def is_order_met(self, tick):
-        if Action.MARKET == self.action:
+        if self.is_market:
             return True
         elif Action.STOP == self.action and float(tick.low_price) <= float(self.price):
             return True
@@ -360,9 +363,9 @@ class BuyOrder(Order):
         return self.calculate_split(self._shares, func)
 
     def is_order_met(self, tick):
-        if Action.MARKET == self.action:
+        if self.is_market:
             return True
-        elif Action.LIMIT == self.action and float(tick.low) <= float(self.price):
+        elif self.is_limit and float(tick.low) <= float(self.price):
             return True
         return False
 
@@ -377,9 +380,9 @@ class SellShortOrder(Order):
     }
 
     def is_order_met(self, tick):
-        if Action.MARKET == self.type:
+        if self.is_market:
             return True
-        elif Action.LIMIT == self.type and float(tick.high) >= float(self.price):
+        elif self.is_limit and float(tick.high) >= float(self.price):
             return True
         return False
 
@@ -394,9 +397,9 @@ class BuyToCoverOrder(Order):
     }
 
     def is_order_met(self, tick):
-        if Action.MARKET == self.type:
+        if self.is_market:
             return True
-        elif Action.STOP == self.type and float(tick.high) >= float(self.price):
+        elif Action.STOP == self.action and float(tick.high) >= float(self.price):
             return True
         return False
 

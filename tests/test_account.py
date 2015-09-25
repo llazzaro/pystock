@@ -171,6 +171,34 @@ class TestAccount(DatabaseTest):
         self.session.commit()
 
 
+class TestOrder(DatabaseTest):
+
+    def test_is_order_met(self):
+        now = datetime.datetime.now()
+        broker = Broker(name='Broker1')
+        account = Account(broker=broker)
+
+        pesos = Currency(name='Pesos', code='ARG')
+        account.deposit(Money(amount=10000, currency=pesos))
+        exchange = Exchange(name='Merval', code='MERV', currency=pesos)
+        stock=Stock(symbol='symbol', description='a stock', ISIN='US123456789', exchange=exchange)
+        tick1=Tick(trade_date=now, price=13.20, amount=1000, volume=1000, security=stock)
+        order1=BuyOrder(account=account, security=stock, price=13.25, share=10, is_market=True)
+        order2=BuyOrder(account=account, security=stock, price=13.15, share=10)
+        order3=SellOrder(account=account, security=stock, price=13.25, share=10)
+        order4=SellOrder(account=account, security=stock, price=13.15, share=10, is_market=True)
+        self.session.add(order1)
+        self.session.add(order2)
+        self.session.add(order3)
+        self.session.add(order4)
+        self.session.commit()
+
+        self.assertTrue(order1.is_order_met(tick1))
+        self.assertFalse(order2.is_order_met(tick1))
+        self.assertFalse(order3.is_order_met(tick1))
+        self.assertTrue(order4.is_order_met(tick1))
+
+
 class TestStringOutputs(DatabaseTest):
 
     def test_account_ste(self):

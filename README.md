@@ -1,6 +1,6 @@
 #  pystock
 
-[![Build Status](https://travis-ci.org/llazzaro/pystock.svg)](https://travis-ci.org/llazzaro/pystock) [![Coverage Status](https://coveralls.io/repos/llazzaro/pystock/badge.svg?branch=master&service=github)](https://coveralls.io/github/llazzaro/pystock?branch=master)
+[![Build Status](https://travis-ci.org/llazzaro/pystock.svg)](https://travis-ci.org/llazzaro/pystock) [![Coverage Status](https://coveralls.io/repos/llazzaro/pystock/badge.svg?branch=master&service=github)](https://coveralls.io/github/llazzaro/pystock?branch=master) [![Code Health](https://landscape.io/github/llazzaro/pystock/master/landscape.svg?style=flat)](https://landscape.io/github/llazzaro/pystock/master)
 
 pystock is intuitive relational model implemented with SQLAlchemy.
 

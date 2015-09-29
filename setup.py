@@ -36,7 +36,7 @@ class PyTest(TestCommand):
 
 setup(
     name='pyStock',
-    version='0.1.0',
+    version='0.1.1',
     description='A stock market model for persistence using SQLAlchemy',
     long_description=README + '\n\n' + CHANGES,
     classifiers=[

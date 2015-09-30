@@ -325,7 +325,6 @@ class Order(Base):
             self.stage = stage
         session.add(stage)
 
-    @hybrid_property
     def cancel(self):
         if self.current_stage.is_open:
             session = object_session(self)

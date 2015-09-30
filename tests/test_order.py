@@ -53,7 +53,7 @@ class TestAccount(DatabaseTest):
 
     def test_update_order_stage_to_cancel(self):
         order = self._buy_stock(self.stock_one)
-        order.update_stage(CancelOrderStage())
+        order.cancel()
 
         self.assertTrue(order.current_stage.is_cancel)
 

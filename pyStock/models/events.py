@@ -2,6 +2,11 @@ from decimal import Decimal
 from sqlalchemy.orm import object_session
 
 
+def order_with_open_stage(mapper, connection, target):
+    from pyStock.models import OpenOrderStage
+    target.update_stage(OpenOrderStage())
+
+
 def validate_buy_order(mapper, connection, target):
     from pyStock.models.money import Money
     from pyStock.models import Position, OpenPositionStage

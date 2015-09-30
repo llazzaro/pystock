@@ -24,6 +24,7 @@ from pyStock.models.money import Money
 from pyStock.models.events import (
     validate_buy_order,
     validate_sell_order,
+    order_with_open_stage,
 )
 
 
@@ -308,14 +309,29 @@ class Order(Base):
     def is_order_met(self, tick):
         raise NotImplementedError('Abstrat method called')
 
+    @hybrid_property
     def current_stage(self):
-        raise NotImplementedError('Abstrat method called')
+        current_stage = self.stage
+        while self.stage and current_stage.next_stage is not None:
+            current_stage = current_stage.next_stage
+
+        return current_stage
 
     def update_stage(self, stage):
-        raise NotImplementedError('Abstrat method called')
+        session = object_session(self)
+        if self.current_stage is not None:
+            self.current_stage.next_stage = stage
+        else:
+            self.stage = stage
+        session.add(stage)
 
+    @hybrid_property
     def cancel(self):
-        raise NotImplementedError('Abstract method called')
+        if self.current_stage.is_open:
+            session = object_session(self)
+            cancel_stage = CancelOrderStage()
+            self.update_stage(cancel_stage)
+            session.add(cancel_stage)
 
 
 class SellOrder(Order):
@@ -421,18 +437,17 @@ class OrderStage(Base):
     def __str__(self):
         return '{0} {1}'.format(self.stage_type, self.executed_on)
 
+    @hybrid_property
+    def is_open(self):
+        return False
 
-class PlacedOrderStage(OrderStage):
-    """
+    @hybrid_property
+    def is_cancel(self):
+        return False
 
-    """
-    __tablename__ = 'pystock_placed_stage_order'
-    id = Column(Integer, ForeignKey('pystock_stage_order.id'), primary_key=True)
-
-    excluded_form_columns = ('stage_type',)
-    __mapper_args__ = {
-        'polymorphic_identity': 'pystock_placed_order_stage',
-    }
+    @hybrid_property
+    def is_filled(self):
+        return False
 
 
 class OpenOrderStage(OrderStage):
@@ -447,6 +462,10 @@ class OpenOrderStage(OrderStage):
         'polymorphic_identity': 'pystock_stage_open_order',
     }
 
+    @hybrid_property
+    def is_open(self):
+        return True
+
 
 class CancelOrderStage(OrderStage):
     """
@@ -459,6 +478,10 @@ class CancelOrderStage(OrderStage):
         'polymorphic_identity': 'pystock_stage_cancel_order',
     }
 
+    @hybrid_property
+    def is_cancel(self):
+        return True
+
 
 class FillOrderStage(OrderStage):
     __tablename__ = 'pystock_fill_stage_order'
@@ -467,6 +490,10 @@ class FillOrderStage(OrderStage):
     __mapper_args__ = {
         'polymorphic_identity': 'pystock_stage_fill_order',
     }
+
+    @hybrid_property
+    def is_filled(self):
+        return True
 
 
 class Split(Base):
@@ -766,3 +793,5 @@ class Position(Base):
 
 event.listen(BuyOrder, 'before_insert', validate_buy_order)
 event.listen(SellOrder, 'before_insert', validate_sell_order)
+event.listen(BuyOrder, 'after_insert', order_with_open_stage)
+event.listen(SellOrder, 'after_insert', order_with_open_stage)

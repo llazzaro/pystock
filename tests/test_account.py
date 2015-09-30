@@ -127,49 +127,6 @@ class TestAccount(DatabaseTest):
         self.session.add(order)
         self.session.commit()
 
-    def _buy_stock(self, stock):
-        self.account.deposit(self.money)
-        # buy it
-        order = BuyOrder(account=self.account, security=stock, price=100, share=9)
-        self.session.add(order)
-        self.session.commit()
-
-    def test_sell_validate_selling_something_not_owned(self):
-        # can't sell because don't have the stock
-        with self.assertRaises(Exception):
-            order = SellOrder(account=self.account, security=self.stock_two, price=100, share=9)
-            self.session.add(order)
-            self.session.commit()
-
-    def test_sell_validate_selling_something_owned_but_quantity_invalid(self):
-        self._buy_stock(self.stock_one)
-        # can't sell because don't have the enough share
-        with self.assertRaises(Exception):
-            order = SellOrder(account=self.account, security=self.stock_one, price=100, share=9000)
-            self.session.add(order)
-            self.session.commit()
-
-    def test_sell_validate_selling_more_than_owned(self):
-        self._buy_stock(self.stock_one)
-        # can't sell because don't have the stock
-        with self.assertRaises(Exception):
-            order = SellOrder(account=self.account, security=self.stock_two, price=200, share=9)
-            self.session.add(order)
-            self.session.commit()
-
-    def test_sell_something_owned_ok_path(self):
-        self._buy_stock(self.stock_one)
-
-        tomorrow = datetime.datetime.now() + datetime.timedelta(days=1)
-        quote = SecurityQuote(date=tomorrow, close_price=12, open_price=10.1, high_price=14, low_price=10.1, volume=10000)
-        self.session.add(quote)
-        self.session.commit()
-        # sell it
-        order = SellOrder(account=self.account, security=self.stock_one, price=100, share=9)
-
-        self.session.add(order)
-        self.session.commit()
-
 
 class TestOrder(DatabaseTest):
 

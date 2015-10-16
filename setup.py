@@ -29,14 +29,14 @@ class PyTest(TestCommand):
         self.test_suite = True
 
     def run_tests(self):
-        #import here, cause outside the eggs aren't loaded
+        # import here, cause outside the eggs aren't loaded
         import pytest
         errno = pytest.main(self.pytest_args)
         sys.exit(errno)
 
 setup(
     name='pyStock',
-    version='0.1.1',
+    version='0.1.2',
     description='A stock market model for persistence using SQLAlchemy',
     long_description=README + '\n\n' + CHANGES,
     classifiers=[

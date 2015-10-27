@@ -75,7 +75,7 @@ class TestMoney(DatabaseTest):
 
         usd_10, created = get_or_create(self.session, Money, amount=Decimal(10), currency=currency_usd)
 
-        self.assertEquals(u'US$10.00', unicode(usd_10))
+        self.assertEquals(u'US$10.00', str(usd_10))
 
     def test_add_money(self):
         currency_usd, created = get_or_create(self.session, Currency, name='Dollar', code='USD')

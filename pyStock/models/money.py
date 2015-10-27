@@ -1,8 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import division
 import sys
-from decimal import Decimal, ROUND_DOWN
-
+from decimal import Decimal
 
 PYTHON2 = sys.version_info[0] == 2
 
@@ -35,6 +34,9 @@ class Currency(Base):
     code = Column(String, unique=True)
     name = Column(String)
 
+    def __hash__(self):
+        return self.code.__hash__()
+
     def __eq__(self, other):
         return type(self) is type(other) and self.code == other.code
 
@@ -56,7 +58,7 @@ class Money(Base):
     currency = relationship("Currency", backref="money")
 
     def __repr__(self):
-        return "{0} {1}".format(self.amount.to_integral_value(ROUND_DOWN),
+        return "{0} {1}".format(self.amount,
                           self.currency)
 
     def __unicode__(self):

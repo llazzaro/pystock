@@ -19,6 +19,9 @@ from sqlalchemy import (
 from pyStock import (
     Base,
 )
+from pyStock.models import (
+    Asset
+)
 
 
 class Currency(Base):
@@ -47,10 +50,10 @@ class Currency(Base):
         return self.code
 
 
-class Money(Base):
+class Money(Asset):
 
     __tablename__ = 'pystock_money'
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, ForeignKey('pystock_asset.id'), primary_key=True)
     amount = Column(Numeric)
     account_id = Column(Integer, ForeignKey('pystock_account.id'))
     account = relationship("Account", backref="money")

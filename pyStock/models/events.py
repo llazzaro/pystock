@@ -13,8 +13,8 @@ def validate_buy_order(mapper, connection, target):
     cost = target.share * target.price + target.account.broker.commission(target)
     if cost > target.account.cash[target.security.currency]:
         raise Exception('Transition fails validation: cash {0} is smaller than cost {1}'.format(target.account.cash[target.security.currency], cost))
-    # TODO create the withdraw from account
-    target.account.withdraw(Money(amount=target.share * Decimal(target.price), currency=target.security.exchange.currency))
+
+    target.account.deposit(Money(amount=target.share * -1 * Decimal(target.price), currency=target.security.exchange.currency))
     session = object_session(target)
     position = Position(buy_order=target, stage=OpenPositionStage(), share=target.share, account=target.account)
     session.add(position)

@@ -116,9 +116,6 @@ class Account(Base):
     def deposit(self, money):
         money.account = self
 
-    def withdraw(self, money):
-        self.deposit(Money(amount=-1 * money.amount, currency=money.currency))
-
     @hybrid_property
     def total(self):
         """

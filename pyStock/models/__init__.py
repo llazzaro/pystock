@@ -500,15 +500,6 @@ class Book(Base):
     owner_id = Column(Integer, ForeignKey('pystock_owner.id'))
 
 
-class Owner(Base):
-    """
-        Represent how is buying. usually this class is associated with another owner model in your app
-    """
-    __tablename__ = 'pystock_owner'
-    id = Column(Integer, primary_key=True)
-    name = Column(String)
-
-
 class Exchange(Base):
     """
         A marketplace in which securities, commodities, derivatives and other financial instruments are traded.

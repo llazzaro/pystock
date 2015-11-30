@@ -13,7 +13,15 @@ from sqlalchemy.orm import object_session
 
 from pyStock import Base
 from pyStock.models import SecurityQuote
-from pyStock.models.money import Money
+
+
+class Owner(Base):
+    """
+        Represent how is buying. usually this class is associated with another owner model in your app
+    """
+    __tablename__ = 'pystock_owner'
+    id = Column(Integer, primary_key=True)
+    name = Column(String)
 
 
 class Broker(Base):

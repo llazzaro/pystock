@@ -6,7 +6,6 @@ from pyStock.models import (
     FillOrderStage,
     BuyOrder,
     SellOrder,
-    Owner,
     Exchange,
     Security,
     Tick,
@@ -16,6 +15,7 @@ from pyStock.models import (
 )
 from pyStock.models.account import (
     Account,
+    Owner,
     Broker,
 )
 from pyStock.models.money import (
@@ -83,8 +83,7 @@ class TestAccount(DatabaseTest):
 
     def test_total_value(self):
         account=Account(owner=self.owner, broker=self.free_broker)
-        money = Money(amount=1000, currency=self.pesos)
-        account.deposit(money)
+        account.deposit(self.money)
 
         share=10
         price = 9.1
@@ -234,7 +233,8 @@ class TestPosition(DatabaseTest):
         pesos = Currency(name='Pesos', code='ARG')
         broker = Broker(name='Cheap')
         self.account = Account(broker=broker)
-        self.account.deposit(Money(amount=Decimal(10000), currency=pesos))
+        ten_thousand_pesos = Money(amount=Decimal(10000), currency=pesos)
+        self.account.deposit(ten_thousand_pesos)
         exchange = Exchange(name='Merval', currency=pesos)
         self.security = Stock(symbol='PBR', description='Petrobras BR', ISIN='US71654V4086', exchange=exchange)
         filled_stage = FillOrderStage(executed_on=datetime.datetime.now())

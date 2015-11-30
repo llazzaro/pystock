@@ -4,12 +4,12 @@ from pyStock.models import (
     SecurityQuote,
     BuyOrder,
     SellOrder,
-    Owner,
     Exchange,
     FillOrderStage,
     CancelOrderStage,
 )
 from pyStock.models.account import (
+    Owner,
     Account,
     Broker,
 )

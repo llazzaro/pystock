@@ -8,6 +8,11 @@ from pyStock.models.money import (
     Currency,
     Money,
 )
+from pyStock.models.account import (
+    Account,
+    Broker,
+    Owner
+)
 
 from . import DatabaseTest
 
@@ -28,33 +33,38 @@ class TestCurrency(DatabaseTest):
 
 class TestMoney(DatabaseTest):
 
+    def setup(self):
+        self.owner = Owner(name='lucky')
+        self.free_broker = Broker(name='Free Broker')
+        self.account = Account(broker=self.broker, owner=self.owner)
+
     def test_money_compare_currencies(self):
         currency_arg, created = get_or_create(self.session, Currency, name='Peso', code='ARG')
         currency_usd, created = get_or_create(self.session, Currency, name='Dollar', code='USD')
 
-        ar_10, created = get_or_create(self.session, Money, amount=10, currency=currency_arg)
-        usd_10, created = get_or_create(self.session, Money, amount=10, currency=currency_usd)
+        ar_10 = Money(amount=10, currency=currency_arg)
+        usd_10 = Money(amount=10, currency=currency_usd)
 
     def test_money_gt(self):
         currency_usd, created = get_or_create(self.session, Currency, name='Dollar', code='USD')
-        usd_10, created = get_or_create(self.session, Money, amount=10, currency=currency_usd)
-        usd_11, created = get_or_create(self.session, Money, amount=11, currency=currency_usd)
+        usd_10 = Money(amount=10, currency=currency_usd)
+        usd_11 = Money(amount=11, currency=currency_usd)
 
         self.assertTrue(usd_11 > usd_10)
 
     def test_money_lt(self):
         currency_usd, created = get_or_create(self.session, Currency, name='Dollar', code='USD')
 
-        usd_10, created = get_or_create(self.session, Money, amount=10, currency=currency_usd)
-        usd_11, created = get_or_create(self.session, Money, amount=11, currency=currency_usd)
+        usd_10 = Money(amount=10, currency=currency_usd)
+        usd_11 = Money(amount=11, currency=currency_usd)
 
         self.assertFalse(usd_11 < usd_10)
 
     def test_money_equals(self):
         currency_usd, created = get_or_create(self.session, Currency, name='Dollar', code='USD')
 
-        usd_10, created = get_or_create(self.session, Money, amount=10, currency=currency_usd)
-        other_usd_10, created = get_or_create(self.session, Money, amount=10, currency=currency_usd)
+        usd_10 = Money(amount=10, currency=currency_usd)
+        other_usd_10 = Money(amount=10, currency=currency_usd)
         self.assertTrue(other_usd_10 == usd_10)
 
     def test_repr(self):
@@ -80,8 +90,8 @@ class TestMoney(DatabaseTest):
     def test_add_money(self):
         currency_usd, created = get_or_create(self.session, Currency, name='Dollar', code='USD')
 
-        usd_10, created = get_or_create(self.session, Money, amount=Decimal(10), currency=currency_usd)
-        usd_20, created = get_or_create(self.session, Money, amount=Decimal(20), currency=currency_usd)
+        usd_10 = Money(amount=Decimal(10), currency=currency_usd)
+        usd_20 = Money(amount=Decimal(20), currency=currency_usd)
 
         usd_30 = usd_10 + usd_20
 
@@ -91,8 +101,8 @@ class TestMoney(DatabaseTest):
     def test_sub(self):
         currency_usd, created = get_or_create(self.session, Currency, name='Dollar', code='USD')
 
-        usd_10, created = get_or_create(self.session, Money, amount=Decimal(10), currency=currency_usd)
-        usd_20, created = get_or_create(self.session, Money, amount=Decimal(20), currency=currency_usd)
+        usd_10 = Money(amount=Decimal(10), currency=currency_usd)
+        usd_20 = Money(amount=Decimal(20), currency=currency_usd)
 
         usd_sub = usd_20 - usd_10
 
@@ -102,9 +112,9 @@ class TestMoney(DatabaseTest):
     def test_less_or_equal(self):
         currency_usd, created = get_or_create(self.session, Currency, name='Dollar', code='USD')
 
-        usd_10, created = get_or_create(self.session, Money, amount=Decimal(10), currency=currency_usd)
-        other_usd_10, created = get_or_create(self.session, Money, amount=Decimal(10), currency=currency_usd)
-        usd_20, created = get_or_create(self.session, Money, amount=Decimal(20), currency=currency_usd)
+        usd_10 = Money(amount=Decimal(10), currency=currency_usd)
+        other_usd_10 = Money(amount=Decimal(10), currency=currency_usd)
+        usd_20 = Money(amount=Decimal(20), currency=currency_usd)
 
         self.assertTrue(usd_10 <= usd_20)
         self.assertTrue(usd_10 <= other_usd_10)
@@ -112,9 +122,9 @@ class TestMoney(DatabaseTest):
     def test_great_or_equal(self):
         currency_usd, created = get_or_create(self.session, Currency, name='Dollar', code='USD')
 
-        usd_10, created = get_or_create(self.session, Money, amount=Decimal(10), currency=currency_usd)
-        other_usd_10, created = get_or_create(self.session, Money, amount=Decimal(10), currency=currency_usd)
-        usd_20, created = get_or_create(self.session, Money, amount=Decimal(20), currency=currency_usd)
+        usd_10 = Money(amount=Decimal(10), currency=currency_usd)
+        other_usd_10 = Money(amount=Decimal(10), currency=currency_usd)
+        usd_20 = Money(amount=Decimal(20), currency=currency_usd)
 
         self.assertTrue(usd_20 >= usd_10)
         self.assertTrue(usd_20 >= other_usd_10)
@@ -122,8 +132,8 @@ class TestMoney(DatabaseTest):
     def test_not_equal_by_amount(self):
         currency_usd, created = get_or_create(self.session, Currency, name='Dollar', code='USD')
 
-        usd_10, created = get_or_create(self.session, Money, amount=Decimal(10), currency=currency_usd)
-        usd_20, created = get_or_create(self.session, Money, amount=Decimal(20), currency=currency_usd)
+        usd_10 = Money(amount=Decimal(10), currency=currency_usd)
+        usd_20 = Money(amount=Decimal(20), currency=currency_usd)
 
         self.assertTrue(usd_10 != usd_20)
 
@@ -131,8 +141,8 @@ class TestMoney(DatabaseTest):
         currency_usd, created = get_or_create(self.session, Currency, name='Dollar', code='USD')
         currency_ar, created = get_or_create(self.session, Currency, name='Peso', code='ARG')
 
-        usd_10, created = get_or_create(self.session, Money, amount=Decimal(10), currency=currency_usd)
-        ar_10, created = get_or_create(self.session, Money, amount=Decimal(10), currency=currency_ar)
+        usd_10 = Money(amount=Decimal(10), currency=currency_usd)
+        ar_10 = Money(amount=Decimal(10), currency=currency_ar)
 
         self.assertTrue(usd_10 != ar_10)
 

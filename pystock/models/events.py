@@ -3,25 +3,25 @@ from sqlalchemy.orm import object_session
 
 
 def order_with_open_stage(mapper, connection, target):
-    from pyStock.models import OpenOrderStage
+    from pystock.models import OpenOrderStage
     target.update_stage(OpenOrderStage())
 
 
 def validate_buy_order(mapper, connection, target):
-    from pyStock.models.money import Money
-    from pyStock.models import Position, OpenPositionStage
+    from pystock.models.money import Money
+    from pystock.models import Position, OpenPositionStage
     cost = target.share * target.price + target.account.broker.commission(target)
     if cost > target.account.cash[target.security.currency]:
         raise Exception('Transition fails validation: cash {0} is smaller than cost {1}'.format(target.account.cash[target.security.currency], cost))
-    # TODO create the withdraw from account
-    target.account.withdraw(Money(amount=target.share * Decimal(target.price), currency=target.security.exchange.currency))
+
+    target.account.deposit(Money(amount=target.share * -1 * Decimal(target.price), currency=target.security.exchange.currency))
     session = object_session(target)
     position = Position(buy_order=target, stage=OpenPositionStage(), share=target.share, account=target.account)
     session.add(position)
 
 
 def validate_sell_order(mapper, connection, target):
-    from pyStock.models import SecurityQuote, Tick
+    from pystock.models import SecurityQuote, Tick
     currency = target.security.exchange.currency
     if target.security.symbol not in target.account.holdings.keys():
         raise Exception('Transition fails validation: symbol {0} not in holdings'.format(target.security.symbol))
@@ -39,7 +39,7 @@ def validate_sell_order(mapper, connection, target):
 
 
 def validate_buy_to_cover(mapper, connection, target):
-    from pyStock.models import SecurityQuote
+    from pystock.models import SecurityQuote
     latest_quote = object_session(target).query(SecurityQuote).order_by('date desc').limit(1).first()
     close_price = latest_quote.close_price
     if target.is_stop and target.price < close_price:

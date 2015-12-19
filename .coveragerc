@@ -1,5 +1,5 @@
 [run]
-source = pyStock
+source = pystock
 
 [report]
 omit = tests

@@ -16,8 +16,11 @@ from sqlalchemy import (
 )
 
 
-from pyStock import (
+from pystock import (
     Base,
+)
+from pystock.models import (
+    Asset
 )
 
 
@@ -31,8 +34,8 @@ class Currency(Base):
     """
     __tablename__ = 'pystock_currency'
     id = Column(Integer, primary_key=True)
-    code = Column(String, unique=True)
-    name = Column(String)
+    code = Column(String, unique=True, nullable=False)
+    name = Column(String, nullable=False)
 
     def __hash__(self):
         return self.code.__hash__()
@@ -47,14 +50,14 @@ class Currency(Base):
         return self.code
 
 
-class Money(Base):
+class Money(Asset):
 
     __tablename__ = 'pystock_money'
-    id = Column(Integer, primary_key=True)
-    amount = Column(Numeric)
-    account_id = Column(Integer, ForeignKey('pystock_account.id'))
+    id = Column(Integer, ForeignKey('pystock_asset.id'), primary_key=True)
+    amount = Column(Numeric, nullable=False)
+    account_id = Column(Integer, ForeignKey('pystock_account.id'), nullable=False)
     account = relationship("Account", backref="money")
-    currency_id = Column(Integer, ForeignKey('pystock_currency.id'))
+    currency_id = Column(Integer, ForeignKey('pystock_currency.id'), nullable=False)
     currency = relationship("Currency", backref="money")
 
     def __repr__(self):

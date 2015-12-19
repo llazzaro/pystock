@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 import datetime
-from collections import Counter
 
 from sqlalchemy import event
 from sqlalchemy.sql.expression import ClauseElement
@@ -19,9 +18,8 @@ from sqlalchemy import (
     Boolean,
 )
 
-from pyStock import Base
-from pyStock.models.money import Money
-from pyStock.models.events import (
+from pystock import Base
+from pystock.models.events import (
     validate_buy_order,
     validate_sell_order,
     order_with_open_stage,
@@ -40,121 +38,29 @@ def get_or_create(session, model, defaults=None, **kwargs):
         return instance, True
 
 
-class Broker(Base):
-    """
-        An agency broker is a broker that acts as a middle man to the stock exchange, and places trades on behalf of clients.
-    """
-    __tablename__ = 'pystock_broker'
-
-    id = Column(Integer, primary_key=True)
-    name = Column(String)
-    address = Column(String)
-    # usually phone and caegory are fks, we
-    # save this for informational purposes
-    # to aovid complex model on no so relevant info.
-    # we only want to display this
-    phone = Column(String)
-    category = Column(String)
-    web = Column(String)
-    email = Column(String)
-    identification_code = Column(String, unique=True)
-
-    def __str__(self):
-        return self.name or 'No Name'
-
-    def commission(self, target):
-        return 0
-
-
-class Account(Base):
-    """
-
-    """
-    __tablename__ = 'pystock_account'
-
-    id = Column(Integer, primary_key=True)
-    broker_id = Column(Integer, ForeignKey('pystock_broker.id'))
-    broker = relationship('Broker', backref='accounts')
-    owner = relationship('Owner', backref='accounts')
-    owner_id = Column(Integer, ForeignKey('pystock_owner.id'))
-
-    def __str__(self):
-        return 'Account for {0} broker {1}'.format(self.owner.name, self.broker.name)
-
-    @hybrid_property
-    def cash(self):
-        res = Counter()
-        for money in self.money:
-            res[money.currency] += money.amount
-
-        return res
-
-    @hybrid_property
-    def holdings(self):
-        res = Counter()
-        for position in self.positions:
-            if position.is_open:
-                symbol = position.buy_order.security.symbol
-                res[symbol] += position.share
-
-        return res
-
-    @hybrid_property
-    def holdings_value(self):
-        """
-            all open positions with current market price
-        """
-        res = Counter()
-        for position in self.positions:
-            if position.is_open:
-                latest_quote = object_session(position).query(SecurityQuote).order_by('date desc').limit(1).first()
-                currency = position.buy_order.security.exchange.currency
-                res[currency] += latest_quote.close_price * position.buy_order.share
-
-        return res
-
-    @hybrid_property
-    def holdings_cost(self):
-        """
-            return how much money was used for current holdings
-        """
-        res = Counter()
-        for position in self.positions:
-            if position.is_open:
-                symbol = position.buy_order.security.symbol
-                res[symbol] += position.buy_order.price * position.buy_order.share
-
-        return res
-
-    def execute(self, order, tick):
-        pass
-
-    def deposit(self, money):
-        money.account = self
-
-    def withdraw(self, money):
-        self.deposit(Money(amount=-1 * money.amount, currency=money.currency))
-
-    @hybrid_property
-    def total(self):
-        """
-            total with holding current value
-        """
-        return self.cash + self.holdings_value
-
-
 class Asset(Base):
     """
-        An asset that derives value because of a contractual claim. Stocks, bonds, bank deposits, and the like are all examples of financial assets.
-
+        An asset is an economic resource.
+        Anything tangible or intangible that can be owned or controlled
+        to produce value and that is held to have positive economic value is considered an asset.
 
     """
     __tablename__ = 'pystock_asset'
 
     id = Column(Integer, primary_key=True)
+    exchange = relationship('Exchange', backref='securities')
+    exchange_id = Column(Integer, ForeignKey('pystock_exchange.id'))
+    issuer_name = Column(String, nullable=True)
+    description = Column(String, nullable=True)
+    asset_type = Column(String(50))
+
+    __mapper_args__ = {
+        'polymorphic_identity': 'pystock_asset',
+        'polymorphic_on': asset_type
+    }
 
 
-class Security(Base):
+class Security(Asset):
     """
         A security is a financial instrument that represents an
         ownership position in a publicly-traded corporation (stock),
@@ -166,20 +72,10 @@ class Security(Base):
     """
     __tablename__ = 'pystock_security'
 
-    id = Column(Integer, primary_key=True)
-    security_type = Column(String(50))
+    id = Column(Integer, ForeignKey('pystock_asset.id'), primary_key=True)
     symbol = Column(String, nullable=False, unique=True)
-    description = Column(String, nullable=False)
-    issuer_name = Column(String, nullable=True)
     ISIN = Column(String(12), nullable=False, unique=True)
     CFI = Column(String(6), nullable=True, unique=True)
-    exchange = relationship('Exchange', backref='securities')
-    exchange_id = Column(Integer, ForeignKey('pystock_exchange.id'))
-
-    __mapper_args__ = {
-        'polymorphic_identity': 'pystock_security',
-        'polymorphic_on': security_type
-    }
 
     def __str__(self):
         return self.symbol
@@ -604,15 +500,6 @@ class Book(Base):
     owner_id = Column(Integer, ForeignKey('pystock_owner.id'))
 
 
-class Owner(Base):
-    """
-        Represent how is buying. usually this class is associated with another owner model in your app
-    """
-    __tablename__ = 'pystock_owner'
-    id = Column(Integer, primary_key=True)
-    name = Column(String)
-
-
 class Exchange(Base):
     """
         A marketplace in which securities, commodities, derivatives and other financial instruments are traded.
@@ -794,3 +681,5 @@ event.listen(BuyOrder, 'before_insert', validate_buy_order)
 event.listen(SellOrder, 'before_insert', validate_sell_order)
 event.listen(BuyOrder, 'after_insert', order_with_open_stage)
 event.listen(SellOrder, 'after_insert', order_with_open_stage)
+
+from pystock.models.account import Account

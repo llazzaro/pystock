@@ -18,7 +18,7 @@ To get started check
 Two options are available:
 
 * Clone the repo: `git clone https://github.com/llazzaro/pystock.git`.
-* Install with pip: pip install pyStock
+* Install with pip: pip install pystock
 
 ## Bugs and feature requests
 
@@ -27,7 +27,7 @@ Have a bug or a feature request? [please open a new issue](https://github.com/ll
 
 ## Documentation
 
-pyStock's documentation, included in this repo in the root directory, is built with  and publicly hosted on read the docs. The docs may also be run locally.
+pystock's documentation, included in this repo in the root directory, is built with  and publicly hosted on read the docs. The docs may also be run locally.
 
 ### Running documentation locally
 

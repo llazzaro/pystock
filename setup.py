@@ -35,8 +35,8 @@ class PyTest(TestCommand):
         sys.exit(errno)
 
 setup(
-    name='pyStock',
-    version='0.1.3',
+    name='pystock',
+    version='0.1.4',
     description='A stock market model for persistence using SQLAlchemy',
     long_description=README + '\n\n' + CHANGES,
     classifiers=[

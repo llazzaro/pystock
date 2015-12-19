@@ -15,7 +15,7 @@ fileConfig(config.config_file_name)
 # for 'autogenerate' support
 # from myapp import mymodel
 # target_metadata = mymodel.Base.metadata
-from pyStock.models import Base
+from pystock.models import Base
 # Base.metadata.reflect()
 target_metadata = Base.metadata
 

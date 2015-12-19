@@ -1,6 +1,6 @@
 import datetime
 from decimal import Decimal
-from pyStock.models import (
+from pystock.models import (
     Stock,
     SecurityQuote,
     FillOrderStage,
@@ -13,12 +13,12 @@ from pyStock.models import (
     OpenOrderStage,
     OpenPositionStage,
 )
-from pyStock.models.account import (
+from pystock.models.account import (
     Account,
     Owner,
     Broker,
 )
-from pyStock.models.money import (
+from pystock.models.money import (
     Money,
     Currency
 )

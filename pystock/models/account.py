@@ -11,8 +11,8 @@ from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import object_session
 
 
-from pyStock import Base
-from pyStock.models import SecurityQuote
+from pystock import Base
+from pystock.models import SecurityQuote
 
 
 class Owner(Base):

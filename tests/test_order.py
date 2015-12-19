@@ -1,5 +1,5 @@
 import datetime
-from pyStock.models import (
+from pystock.models import (
     Stock,
     SecurityQuote,
     BuyOrder,
@@ -8,12 +8,12 @@ from pyStock.models import (
     FillOrderStage,
     CancelOrderStage,
 )
-from pyStock.models.account import (
+from pystock.models.account import (
     Owner,
     Account,
     Broker,
 )
-from pyStock.models.money import (
+from pystock.models.money import (
     Money,
     Currency
 )

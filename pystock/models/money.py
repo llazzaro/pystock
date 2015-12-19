@@ -16,10 +16,10 @@ from sqlalchemy import (
 )
 
 
-from pyStock import (
+from pystock import (
     Base,
 )
-from pyStock.models import (
+from pystock.models import (
     Asset
 )
 

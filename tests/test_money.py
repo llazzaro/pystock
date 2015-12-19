@@ -1,14 +1,14 @@
 from __future__ import division
 from decimal import Decimal
 
-from pyStock.models import (
+from pystock.models import (
     get_or_create,
 )
-from pyStock.models.money import (
+from pystock.models.money import (
     Currency,
     Money,
 )
-from pyStock.models.account import (
+from pystock.models.account import (
     Account,
     Broker,
     Owner

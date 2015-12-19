@@ -18,8 +18,8 @@ from sqlalchemy import (
     Boolean,
 )
 
-from pyStock import Base
-from pyStock.models.events import (
+from pystock import Base
+from pystock.models.events import (
     validate_buy_order,
     validate_sell_order,
     order_with_open_stage,
@@ -682,4 +682,4 @@ event.listen(SellOrder, 'before_insert', validate_sell_order)
 event.listen(BuyOrder, 'after_insert', order_with_open_stage)
 event.listen(SellOrder, 'after_insert', order_with_open_stage)
 
-from pyStock.models.account import Account
+from pystock.models.account import Account

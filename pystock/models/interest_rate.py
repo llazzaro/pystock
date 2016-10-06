@@ -18,7 +18,7 @@ from pystock.models import SecurityQuote
 
 class InterestRateTag(Base):
 
-     __tablename__ = 'interest_rate_tag'
+    __tablename__ = 'interest_rate_tag'
     id = Column(Integer, primary_key=True)
     name = Column(String)
 

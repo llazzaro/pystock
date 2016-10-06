@@ -6,6 +6,7 @@ from sqlalchemy import (
     String,
     DateTime,
     ForeignKey,
+    DECIMAL,
 )
 from sqlalchemy.orm import relationship
 from sqlalchemy.ext.hybrid import hybrid_property
@@ -25,7 +26,7 @@ class InterestRateTag(Base):
 
 class InterestRate(Base):
 
-     __tablename__ = 'interest_rate'
+    __tablename__ = 'interest_rate'
     id = Column(Integer, primary_key=True)
 
     date = Column(DateTime)

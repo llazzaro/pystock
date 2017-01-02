@@ -645,7 +645,7 @@ class Position(Base):
     sell_order = relationship('SellOrder', backref='tracking')
     sell_order_id = Column(Integer, ForeignKey('pystock_sell_order.id'))
     stage = relationship('PositionStage', backref='positions')
-    first_id = Column(Integer, ForeignKey('pystock_position_stage.id'))
+    stage_id = Column(Integer, ForeignKey('pystock_position_stage.id'))
     account_id = Column(Integer, ForeignKey('pystock_account.id'))
     account = relationship('Account', backref='positions')
 
